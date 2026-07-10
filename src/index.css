@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+@theme {
+  --font-montserrat: "Montserrat", sans-serif;
+  --animate-infinite-scroll: infinite-scroll 40s linear infinite;
+  
+  @keyframes infinite-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+@layer base {
+  body {
+    @apply transition-colors duration-700 antialiased overflow-x-hidden m-0 p-0;
+    font-family: var(--font-montserrat);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* THEME TOGGLE LOGIC - DEEPER BACKGROUNDS */
+.dark {
+  background-color: #0d0a07; /* Super Dark Roasted Bean */
+  color: #ffffff;
+}
+
+.light {
+  background-color: #fcfaf7; /* Clean Cream White */
+  color: #26140a;
+}
+
+/* DYNAMIC BACKGROUND ORBS */
+.bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: -1;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.orb-1 { width: 600px; height: 600px; top: -200px; left: -100px; background: rgba(217, 119, 6, 0.2); }
+.orb-2 { width: 500px; height: 500px; bottom: -100px; right: -50px; background: rgba(120, 53, 15, 0.2); }
+.orb-3 { width: 400px; height: 400px; top: 40%; left: 50%; background: rgba(217, 119, 6, 0.1); }
+
+/* BENTO GLASS CARDS - MAKAPAL NA BORDER AT SHADOW */
+.glass-card {
+  @apply backdrop-blur-3xl transition-all duration-500 border-2; 
+}
+
+.dark .glass-card { 
+  @apply bg-black/60 border-white/15;
+  /* Thick Dark Caramel Shadow */
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 1), 
+              0 0 30px 2px rgba(217, 119, 6, 0.3);
+}
+
+.light .glass-card { 
+  @apply bg-white/95 border-amber-900/20;
+  /* Ultra Visible Caramel Shadow */
+  box-shadow: 0 25px 50px -10px rgba(62, 39, 35, 0.4), 
+              0 15px 30px -5px rgba(217, 119, 6, 0.45),
+              0 0 0 2px rgba(120, 53, 15, 0.05);
+}
+
+/* Hover effect na talagang lulutang */
+.glass-card:hover {
+  @apply border-amber-600;
+  transform: translateY(-10px);
+  box-shadow: 0 45px 90px -15px rgba(66, 34, 13, 0.5), 
+              0 30px 50px -15px rgba(217, 119, 6, 0.6);
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  @apply bg-amber-700 rounded-full hover:bg-amber-600;
+}
+
+/* TYPOGRAPHY - NO MORE THIN FONTS */
+.coffee-title {
+  color: #26140a !important; /* Pinaka-dark na brown */
+  font-weight: 900 !important;
+}
+
+.dark .coffee-title {
+  color: #fdf5f2 !important; /* Malapit na sa puti for contrast */
+}
+
+/* Text visibility overrides */
+.light h1, .light h2, .light h3, .light h4, .light p, .light span { 
+  color: #26140a !important; 
+  font-weight: 700 !important; /* Pinakapal ang font weight */
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4, .dark p, .dark span { 
+  color: #ffffff !important; 
+  font-weight: 700 !important;
+}
+
+/* Labels - Solid Caramel/Coffee */
+.light .section-label { 
+  color: #78350f !important; 
+  opacity: 1 !important; 
+  font-weight: 900 !important; 
+  letter-spacing: 0.15em;
+}
+
+.dark .section-label { 
+  color: #f59e0b !important; 
+  opacity: 1 !important; 
+  font-weight: 900 !important; 
+  letter-spacing: 0.15em;
+}
+
+/* Special Case for Amber Text */
+.text-amber-600 { 
+  color: #b45309 !important; /* Mas dark na Amber para kita sa light mode */
+  font-weight: 800 !important;
+}
+
+.dark .text-amber-600 {
+  color: #fbbf24 !important; /* Matingkad na Gold sa dark mode */
+}
+/* Gallery Image Polish */
+.gallery-img {
+  filter: contrast(1.1) brightness(1.1);
+  object-position: center 20%; /* Adjusts focus to the face area */
+}
+
+/* Hide the archive text when hovering to keep images clean */
+.group:hover .archive-text {
+  display: none;
+}
+
+/* Animation para sa smooth expansion */
+@keyframes expand {
+  0% { clip-path: circle(0% at var(--x) var(--y)); }
+  100% { clip-path: circle(150% at var(--x) var(--y)); }
+}
+
+.theme-transition {
+  animation: expand 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
