@@ -28,8 +28,8 @@ import musicFestPoster from './assets/Music Fest Poster.png';
 // DATA
 // ============================================================================
 // NOTE: fill in each `url` with the live deployment when it's ready.
-// Until then it stays "#" and the vacuum effect will still play, it just
-// won't navigate anywhere at the end (see useVacuum's guard below).
+// Until then it stays "#" and the portal effect will still play, it just
+// won't navigate anywhere at the end (see usePortalTransition's guard below).
  
 const websites = [
   {
@@ -101,45 +101,54 @@ const posters = [
  
 const SectionEyebrow = ({ label, icon }) => (
   <div className="flex items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
-    <h3 className="text-[9px] sm:text-[11px] md:text-[12px] font-black text-purple-500 uppercase tracking-[0.3em] sm:tracking-[0.6em] md:tracking-[1em] whitespace-nowrap">
+    <h3 className="text-[9px] sm:text-[11px] md:text-[12px] font-black text-[#00b4ff] uppercase tracking-[0.3em] sm:tracking-[0.6em] md:tracking-[1em] whitespace-nowrap">
       {label}
     </h3>
-    <div className="h-[1px] flex-1 bg-purple-500/20" />
+    <div className="h-[1px] flex-1 bg-[#00b4ff]/20" />
     {icon}
   </div>
 );
  
 // ============================================================================
-// VACUUM EFFECT — a bright light source at the right edge of the screen
-// wakes up, and everything on the page gets pulled into it: content shrinks,
-// streaks toward the right, and drains into the light before it flashes and
-// hands off to the live link. `active` (bool) drives the page-content
-// transform below; `stage` drives the light/beam/streaks overlay.
+// PORTAL EFFECT — a small ring of light blinks open in the center of the
+// screen, then flares into a full swirling portal. The page content gets
+// pulled toward it, spinning and shrinking down to a point as it "zooms in"
+// through the portal. A flash marks the moment of arrival, then the portal
+// snaps shut and the page settles back. `stage` drives the portal overlay;
+// the page-content transform (in Project) reads `sucking`/`flash` to zoom in.
 // ============================================================================
- 
-const VACUUM_MS = 1700; // slow drain — this is the part we want seen
-const FLASH_MS = 260; // bright pop once everything's been pulled in
-const RESTORE_MS = 750; // page settles back once we've handed off
- 
-const VACUUM_EASE = 'cubic-bezier(0.74,0,0.86,0.13)'; // slow start, hard yank at the end
- 
-const useVacuum = () => {
+
+const OPEN_MS = 380; // the portal blinks open
+const ZOOM_MS = 1300; // the page spins and zooms into it — the part we want seen
+const FLASH_MS = 220; // bright pop the instant we've gone all the way through
+const RESTORE_MS = 700; // the portal snaps shut and the page settles back
+
+const ZOOM_EASE = 'cubic-bezier(0.74,0,0.86,0.13)'; // slow start, hard pull at the end
+const OPEN_EASE = 'cubic-bezier(0.34,1.56,0.64,1)'; // little overshoot "pop" as it opens
+
+const usePortalTransition = () => {
   const [target, setTarget] = useState(null); // { name, url }
-  const [stage, setStage] = useState('idle'); // idle -> sucking -> flash -> restoring
+  const [stage, setStage] = useState('idle'); // idle -> opening -> sucking -> flash -> restoring
   const arrivedRef = useRef(false);
- 
+
   const trigger = (site) => {
     arrivedRef.current = false;
     setTarget(site);
-    setStage('sucking');
+    setStage('opening');
   };
- 
+
   useEffect(() => {
-    if (stage !== 'sucking') return undefined;
-    const t = setTimeout(() => setStage('flash'), VACUUM_MS);
+    if (stage !== 'opening') return undefined;
+    const t = setTimeout(() => setStage('sucking'), OPEN_MS);
     return () => clearTimeout(t);
   }, [stage]);
- 
+
+  useEffect(() => {
+    if (stage !== 'sucking') return undefined;
+    const t = setTimeout(() => setStage('flash'), ZOOM_MS);
+    return () => clearTimeout(t);
+  }, [stage]);
+
   useEffect(() => {
     if (stage !== 'flash') return undefined;
     const t = setTimeout(() => {
@@ -153,7 +162,7 @@ const useVacuum = () => {
     }, FLASH_MS);
     return () => clearTimeout(t);
   }, [stage, target]);
- 
+
   useEffect(() => {
     if (stage !== 'restoring') return undefined;
     const t = setTimeout(() => {
@@ -162,63 +171,89 @@ const useVacuum = () => {
     }, RESTORE_MS);
     return () => clearTimeout(t);
   }, [stage]);
- 
+
   return { target, stage, trigger };
 };
- 
-// The light source + motion streaks, fixed above everything.
-const VacuumLight = ({ stage, name }) => {
-  const active = stage === 'sucking' || stage === 'flash';
+
+// The portal ring + inward-spiraling streaks + flash, fixed above everything.
+const PortalOverlay = ({ stage, name }) => {
+  const opened = stage === 'opening' || stage === 'sucking';
+  const spinning = stage === 'sucking';
   const flashing = stage === 'flash';
- 
+
+  // Ring blinks open with a little pop, then snaps shut fast once we're through.
+  const ringSize = opened ? 'min(58vw, 58vh, 300px)' : '0px';
+  const ringTransitionMs = stage === 'opening' ? OPEN_MS : stage === 'sucking' ? 90 : 220;
+  const ringTransitionEase = stage === 'opening' ? OPEN_EASE : 'cubic-bezier(0.6,0,0.9,0.2)';
+
   return (
-    <div className="fixed inset-0 z-[2000] pointer-events-none overflow-hidden">
-      {/* streaks — thin horizontal lines racing toward the light while it drains */}
-      {stage === 'sucking' &&
-        Array.from({ length: 7 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute right-0 h-[2px] rounded-full"
-            style={{
-              top: `${(100 / 8) * (i + 1)}%`,
-              width: '46%',
-              background:
-                'linear-gradient(90deg, rgba(216,180,254,0) 0%, rgba(216,180,254,0.85) 70%, rgba(255,255,255,0.95) 100%)',
-              animation: `vacuum-streak ${850 + (i % 3) * 180}ms ${i * 90}ms cubic-bezier(0.7,0,0.84,0) 1 both`,
-              filter: 'blur(0.5px)',
-            }}
-          />
-        ))}
- 
-      {/* the light itself, hugging the right edge */}
+    <div className="fixed inset-0 z-[2000] pointer-events-none overflow-hidden flex items-center justify-center">
+      {/* streaks — thin radial slivers racing inward along the portal's rim */}
+      {spinning &&
+        Array.from({ length: 10 }).map((_, i) => {
+          const angle = (360 / 10) * i;
+          return (
+            <div
+              key={i}
+              className="absolute left-1/2 top-1/2"
+              style={{ transform: `translate(-50%, -50%) rotate(${angle}deg)` }}
+            >
+              <div
+                className="w-[3px] h-[70px] rounded-full"
+                style={{
+                  transformOrigin: '50% 100%',
+                  background:
+                    'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(216,180,254,0.9) 55%, rgba(255,255,255,0.95) 100%)',
+                  animation: `portal-suck ${900 + (i % 3) * 150}ms ${i * 65}ms cubic-bezier(0.6,0,0.9,0.2) infinite`,
+                  filter: 'blur(0.5px)',
+                }}
+              />
+            </div>
+          );
+        })}
+
+      {/* the portal ring itself, blinking open in the center */}
       <div
-        className="absolute top-0 right-0 h-full"
+        className="rounded-full"
         style={{
-          width: active ? '38vw' : '0px',
+          width: ringSize,
+          height: ringSize,
+          padding: '4px',
           background:
-            'radial-gradient(ellipse 70% 100% at 100% 50%, rgba(255,255,255,0.95) 0%, rgba(216,180,254,0.9) 25%, rgba(168,85,247,0.55) 55%, rgba(168,85,247,0) 80%)',
-          boxShadow: active ? '-40px 0 120px 40px rgba(168,85,247,0.5)' : 'none',
-          transition: `width ${VACUUM_MS}ms ${VACUUM_EASE}, box-shadow ${VACUUM_MS}ms ${VACUUM_EASE}`,
+            'conic-gradient(from 0deg, #00b4ff, #a855f7, #d8b4fe, #00e5ff, #00b4ff)',
+          boxShadow: opened
+            ? '0 0 50px 14px rgba(0,180,255,0.55), 0 0 110px 40px rgba(168,85,247,0.4)'
+            : 'none',
+          transition: `width ${ringTransitionMs}ms ${ringTransitionEase}, height ${ringTransitionMs}ms ${ringTransitionEase}, box-shadow ${ringTransitionMs}ms ease`,
+          animation: spinning ? 'portal-spin 2.4s linear infinite' : 'none',
         }}
-      />
- 
-      {/* full-screen flash the instant everything's been drawn in */}
+      >
+        <div
+          className="w-full h-full rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle at center, #ffffff 0%, rgba(216,180,254,0.95) 18%, rgba(139,92,246,0.9) 45%, rgba(30,10,50,0.97) 78%, rgba(10,5,20,0.98) 100%)',
+          }}
+        />
+      </div>
+
+      {/* full-screen flash the instant we've gone all the way through */}
       <div
         className="absolute inset-0 bg-white transition-opacity"
         style={{
           opacity: flashing ? 1 : 0,
-          transitionDuration: flashing ? '90ms' : `${FLASH_MS + 120}ms`,
+          transitionDuration: flashing ? '80ms' : `${FLASH_MS + 120}ms`,
           transitionTimingFunction: flashing ? 'ease-in' : 'ease-out',
         }}
       />
- 
+
       {name && (
         <div
-          className="absolute inset-0 flex items-center justify-end pr-10 sm:pr-16 transition-opacity duration-300"
-          style={{ opacity: active ? 1 : 0 }}
+          className="absolute left-0 right-0 flex justify-center transition-opacity duration-300"
+          style={{ top: 'calc(50% + min(34vh, 175px))', opacity: opened ? 1 : 0 }}
         >
-          <span className="text-white font-black uppercase tracking-[0.4em] text-[10px] sm:text-xs [writing-mode:vertical-rl] drop-shadow-[0_0_12px_rgba(168,85,247,0.9)]">
-            Pulling in {name}
+          <span className="text-white font-black uppercase tracking-[0.35em] text-[10px] sm:text-xs drop-shadow-[0_0_12px_rgba(168,85,247,0.9)]">
+            Entering {name}
           </span>
         </div>
       )}
@@ -231,7 +266,7 @@ const VacuumLight = ({ stage, name }) => {
 // ============================================================================
  
 const WebsiteCard = ({ site, darkMode, onPreview, onVisit }) => (
-  <div className="bg-white/5 backdrop-blur-md border border-purple-500/10 rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden shadow-lg transition-all duration-500 hover:border-purple-500/30 group">
+  <div className="bg-white/5 backdrop-blur-md border border-[#00b4ff]/10 rounded-md sm:rounded-md overflow-hidden shadow-lg transition-all duration-500 hover:border-[#00b4ff]/30 group">
     <button
       onClick={() => onPreview(site)}
       className="relative w-full aspect-video overflow-hidden block"
@@ -244,7 +279,7 @@ const WebsiteCard = ({ site, darkMode, onPreview, onVisit }) => (
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
       <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 right-4 sm:right-6">
-        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.25em] text-purple-300 mb-1">
+        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.25em] text-[#66f0ff] mb-1">
           {site.tag}
         </p>
         <h4 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tighter leading-none">
@@ -256,7 +291,7 @@ const WebsiteCard = ({ site, darkMode, onPreview, onVisit }) => (
     <div className="p-6 sm:p-8 space-y-4 sm:space-y-5">
       <p className="text-sm opacity-60 font-medium leading-relaxed">{site.desc}</p>
  
-      {/* Visit Website — triggers the vacuum, then hands off to the live link */}
+      {/* Visit Website — opens the portal, zooms in, then hands off to the live link */}
       <a
         href={site.url || '#'}
         onClick={(e) => {
@@ -264,10 +299,10 @@ const WebsiteCard = ({ site, darkMode, onPreview, onVisit }) => (
           onVisit(site);
         }}
         title={site.url && site.url !== '#' ? `Visit ${site.name}` : 'Live link coming soon'}
-        className={`inline-flex items-center gap-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest px-5 py-3 rounded-2xl border transition-all ${
+        className={`inline-flex items-center gap-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest px-5 py-3 rounded-md border transition-all ${
           darkMode
-            ? 'bg-white/5 border-purple-500/20 text-purple-300 hover:border-purple-500/40'
-            : 'bg-purple-50 border-purple-200 text-purple-700 hover:border-purple-400'
+            ? 'bg-white/5 border-[#00b4ff]/20 text-[#66f0ff] hover:border-[#00b4ff]/40'
+            : 'bg-[#e0f4ff] border-[#99f5ff] text-[#0066cc] hover:border-[#00e5ff]'
         }`}
       >
         <Globe size={14} /> Visit Website <ExternalLink size={12} className="opacity-50" />
@@ -307,8 +342,8 @@ const PosterStack = ({ items, darkMode, onPreview }) => {
               }}
               className={`absolute top-0 left-1/2 -ml-[140px] sm:-ml-[170px] md:-ml-[200px] w-[280px] h-[400px] sm:w-[340px] sm:h-[480px] md:w-[400px] md:h-[560px] overflow-hidden border-2 cursor-pointer transition-all duration-400 ease-out ${
                 isHovered
-                  ? 'shadow-[0_35px_60px_rgba(0,0,0,0.55)] border-purple-400/70'
-                  : `shadow-[0_15px_30px_rgba(0,0,0,0.35)] ${darkMode ? 'border-purple-500/20' : 'border-purple-300/40'}`
+                  ? 'shadow-[0_35px_60px_rgba(0,0,0,0.55)] border-[#00e5ff]/70'
+                  : `shadow-[0_15px_30px_rgba(0,0,0,0.35)] ${darkMode ? 'border-[#00b4ff]/20' : 'border-[#66f0ff]/40'}`
               }`}
             >
               <img
@@ -337,8 +372,8 @@ const PosterCarouselCard = ({ poster, darkMode, onPreview }) => (
   <button
     onClick={onPreview}
     aria-label={`Preview ${poster.name}`}
-    className={`relative w-full aspect-[3/4] rounded-[2rem] overflow-hidden border-2 shadow-[0_15px_30px_rgba(0,0,0,0.35)] block text-left ${
-      darkMode ? 'border-purple-500/20' : 'border-purple-300/40'
+    className={`relative w-full aspect-[3/4] rounded-md overflow-hidden border-2 shadow-[0_15px_30px_rgba(0,0,0,0.35)] block text-left ${
+      darkMode ? 'border-[#00b4ff]/20' : 'border-[#66f0ff]/40'
     }`}
   >
     <img
@@ -349,7 +384,7 @@ const PosterCarouselCard = ({ poster, darkMode, onPreview }) => (
     />
     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
     <div className="absolute bottom-4 left-4 right-4">
-      <p className="text-[9px] font-black uppercase tracking-[0.25em] text-purple-300 mb-1">
+      <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#66f0ff] mb-1">
         {poster.tag}
       </p>
       <h4 className="text-lg font-black text-white tracking-tight leading-tight">{poster.name}</h4>
@@ -374,7 +409,7 @@ const Lightbox = ({ active, onClose, onNav }) => {
       <button
         onClick={onClose}
         aria-label="Close preview"
-        className="absolute top-6 right-6 sm:top-10 sm:right-10 text-white hover:text-purple-400 transition-colors z-[1001]"
+        className="absolute top-6 right-6 sm:top-10 sm:right-10 text-white hover:text-[#00e5ff] transition-colors z-[1001]"
       >
         <X size={32} className="sm:hidden" />
         <X size={40} className="hidden sm:block" />
@@ -388,7 +423,7 @@ const Lightbox = ({ active, onClose, onNav }) => {
               onNav(-1);
             }}
             aria-label="Previous"
-            className="absolute left-3 sm:left-8 top-1/2 -translate-y-1/2 text-white/70 hover:text-purple-400 transition-colors z-[1001]"
+            className="absolute left-3 sm:left-8 top-1/2 -translate-y-1/2 text-white/70 hover:text-[#00e5ff] transition-colors z-[1001]"
           >
             <ChevronLeft size={40} />
           </button>
@@ -398,7 +433,7 @@ const Lightbox = ({ active, onClose, onNav }) => {
               onNav(1);
             }}
             aria-label="Next"
-            className="absolute right-3 sm:right-8 top-1/2 -translate-y-1/2 text-white/70 hover:text-purple-400 transition-colors z-[1001]"
+            className="absolute right-3 sm:right-8 top-1/2 -translate-y-1/2 text-white/70 hover:text-[#00e5ff] transition-colors z-[1001]"
           >
             <ChevronRight size={40} />
           </button>
@@ -412,11 +447,11 @@ const Lightbox = ({ active, onClose, onNav }) => {
         <img
           src={item.image}
           alt={item.name}
-          className="max-w-full max-h-[72vh] object-contain rounded-2xl shadow-2xl animate-scale-in"
+          className="max-w-full max-h-[72vh] object-contain rounded-md shadow-2xl animate-scale-in"
         />
         <div className="text-center space-y-2 max-w-xl px-2">
           <h4 className="text-xl sm:text-2xl font-black text-white tracking-tight">{item.name}</h4>
-          <p className="text-sm text-purple-200/80 font-medium leading-relaxed">{item.desc}</p>
+          <p className="text-sm text-[#99f5ff]/80 font-medium leading-relaxed">{item.desc}</p>
         </div>
       </div>
     </div>
@@ -429,7 +464,7 @@ const Lightbox = ({ active, onClose, onNav }) => {
  
 const Project = ({ darkMode = true }) => {
   const [active, setActive] = useState(null); // { item, list, index }
-  const { target: vacuumTarget, stage: vacuumStage, trigger: visitWebsite } = useVacuum();
+  const { target: portalTarget, stage: portalStage, trigger: visitWebsite } = usePortalTransition();
  
   const openWebsite = (site) => setActive({ item: site, list: null, index: null });
   const openPoster = (poster, index) => setActive({ item: poster, list: posters, index });
@@ -442,41 +477,46 @@ const Project = ({ darkMode = true }) => {
     });
   };
 
-  const draining = vacuumStage === 'sucking' || vacuumStage === 'flash';
+  const zoomingIn = portalStage === 'sucking' || portalStage === 'flash';
  
   return (
     <div className="relative">
       <style>{`
-        @keyframes vacuum-streak {
-          0% { transform: translateX(-60vw) scaleX(1); opacity: 0; }
-          12% { opacity: 1; }
-          100% { transform: translateX(0) scaleX(0.25); opacity: 0; }
+        @keyframes portal-spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes portal-suck {
+          0% { transform: translateY(-160px) scaleY(1); opacity: 0; }
+          15% { opacity: 1; }
+          100% { transform: translateY(0) scaleY(0.25); opacity: 0; }
         }
       `}</style>
  
       <Lightbox active={active} onClose={() => setActive(null)} onNav={navigate} />
-      <VacuumLight stage={vacuumStage} name={vacuumTarget?.name} />
+      <PortalOverlay stage={portalStage} name={portalTarget?.name} />
  
-      {/* Everything below gets pulled toward the light on the right when a
-          "Visit Website" is clicked, then settles back once the new tab opens. */}
+      {/* Everything below spins and zooms into the portal at the center of the
+          screen when a "Visit Website" is clicked, then settles back once the
+          new tab opens. */}
       <div
         style={{
-          transform: draining
-            ? 'translateX(18%) scaleX(0.05) scaleY(0.55)'
-            : 'translateX(0%) scaleX(1) scaleY(1)',
-          transformOrigin: '100% 50%',
-          opacity: draining ? 0 : 1,
-          filter: draining ? 'blur(10px) brightness(1.5)' : 'blur(0px) brightness(1)',
+          transform: zoomingIn
+            ? 'scale(0.04) rotate(24deg)'
+            : 'scale(1) rotate(0deg)',
+          transformOrigin: '50% 50%',
+          opacity: zoomingIn ? 0 : 1,
+          filter: zoomingIn ? 'blur(10px) brightness(1.6)' : 'blur(0px) brightness(1)',
           transitionProperty: 'transform, opacity, filter',
-          transitionDuration: vacuumStage === 'restoring' ? `${RESTORE_MS}ms` : `${VACUUM_MS}ms`,
+          transitionDuration: portalStage === 'restoring' ? `${RESTORE_MS}ms` : `${ZOOM_MS}ms`,
           transitionTimingFunction:
-            vacuumStage === 'restoring' ? 'cubic-bezier(0.16,1,0.3,1)' : VACUUM_EASE,
+            portalStage === 'restoring' ? 'cubic-bezier(0.16,1,0.3,1)' : ZOOM_EASE,
         }}
         className="space-y-16 sm:space-y-24 animate-fade-in"
       >
         {/* ================= WEBSITES ================= */}
         <section>
-          <SectionEyebrow label="Websites" icon={<Globe size={16} className="text-purple-500" />} />
+          <SectionEyebrow label="Websites" icon={<Globe size={16} className="text-[#00b4ff]" />} />
           <p className="text-sm sm:text-base opacity-60 max-w-2xl mb-8 sm:mb-10">
             Full-stack builds spanning e-commerce, admin dashboards, and secure portals. Click
             a thumbnail for a closer look, or visit a site and watch it get pulled into the light.
@@ -496,7 +536,7 @@ const Project = ({ darkMode = true }) => {
  
         {/* ================= POSTER DESIGN ================= */}
         <section>
-          <SectionEyebrow label="Poster Design" icon={<Layers size={16} className="text-purple-500" />} />
+          <SectionEyebrow label="Poster Design" icon={<Layers size={16} className="text-[#00b4ff]" />} />
           <p className="text-sm sm:text-base opacity-60 max-w-2xl mb-8 sm:mb-10">
             A fanned cascade of print work — hover any poster to lift it clear of the rest, and click it
             for the full view.

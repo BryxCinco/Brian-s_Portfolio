@@ -23,20 +23,21 @@ const VoiceWave = ({ active, levels, state, darkMode }) => {
     ? levels.reduce((a, b) => a + b, 0) / Math.max(1, levels.length)
     : 0.05;
 
-  // A warm, lively, unmistakably feminine palette — rose → fuchsia → gold —
-  // that stays consistent across states but shifts mood: coral-hot while
-  // listening, silky violet-pink while she's speaking, soft blush at rest.
+  // A calm, immersive Ocean Blue palette — teal → cyan → deep blue —
+  // that stays consistent across states but shifts mood: bright
+  // cyan-teal while listening, deeper blue-indigo while she's speaking,
+  // soft misty blue at rest.
   const palette =
     state === 'listening'
-      ? { from: '#fb7185', mid: '#f472b6', to: '#fbbf24', glow: 'rgba(244,114,182,0.65)', glow2: 'rgba(251,113,133,0.4)' }
+      ? { from: '#2dd4bf', mid: '#22d3ee', to: '#38bdf8', glow: 'rgba(34,211,238,0.65)', glow2: 'rgba(45,212,191,0.4)' }
       : state === 'speaking'
-      ? { from: '#f472b6', mid: '#c084fc', to: '#818cf8', glow: 'rgba(192,132,252,0.65)', glow2: 'rgba(244,114,182,0.4)' }
+      ? { from: '#38bdf8', mid: '#3b82f6', to: '#6366f1', glow: 'rgba(59,130,246,0.65)', glow2: 'rgba(56,189,248,0.4)' }
       : {
-          from: darkMode ? '#4b3347' : '#fbcfe8',
-          mid: darkMode ? '#5b3a52' : '#f5d0fe',
-          to: darkMode ? '#4b3347' : '#fbcfe8',
-          glow: 'rgba(236,72,153,0.22)',
-          glow2: 'rgba(236,72,153,0.12)',
+          from: darkMode ? '#0f2e3d' : '#bae6fd',
+          mid: darkMode ? '#123a4d' : '#a5f3fc',
+          to: darkMode ? '#0f2e3d' : '#bae6fd',
+          glow: 'rgba(14,165,233,0.22)',
+          glow2: 'rgba(14,165,233,0.12)',
         };
 
   return (
@@ -893,31 +894,31 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
 
   const theme = darkMode
     ? {
-        panel: 'bg-[#120c14] border-white/10 text-slate-100',
-        header: 'bg-gradient-to-b from-[#1a1220] to-[#150f19] border-white/10',
+        panel: 'bg-[#0a1620] border-white/10 text-slate-100',
+        header: 'bg-gradient-to-b from-[#0f1f2e] to-[#0a1620] border-white/10',
         bubbleBot: 'bg-white/[0.05] border-white/10 text-slate-100',
-        input: 'bg-white/[0.05] border-white/10 focus:border-fuchsia-400/70 text-slate-100 placeholder:text-slate-600',
-        fab: 'bg-gradient-to-br from-[#1a1220] to-[#120c14] border-white/10',
-        notif: 'bg-gradient-to-br from-[#1c1420] to-[#150f19] border-white/10 backdrop-blur-xl',
-        glow: 'shadow-[0_40px_110px_-20px_rgba(217,70,239,0.35),0_0_0_1px_rgba(255,255,255,0.06)]',
-        fabGlow: 'shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_20px_55px_-10px_rgba(217,70,239,0.5)]',
-        tabActive: 'bg-gradient-to-r from-rose-500 to-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/25',
+        input: 'bg-white/[0.05] border-white/10 focus:border-cyan-400/70 text-slate-100 placeholder:text-slate-600',
+        fab: 'bg-gradient-to-br from-[#0f1f2e] to-[#0a1620] border-white/10',
+        notif: 'bg-gradient-to-br from-[#102232] to-[#0a1620] border-white/10 backdrop-blur-xl',
+        glow: 'shadow-[0_40px_110px_-20px_rgba(14,165,233,0.35),0_0_0_1px_rgba(255,255,255,0.06)]',
+        fabGlow: 'shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_20px_55px_-10px_rgba(14,165,233,0.5)]',
+        tabActive: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-blue-500/25',
         tabInactive: 'text-slate-500 hover:text-slate-300',
-        accentText: 'text-fuchsia-400',
-        ring: 'ring-[#150f19]',
+        accentText: 'text-cyan-400',
+        ring: 'ring-[#0a1620]',
       }
     : {
-        panel: 'bg-[#fffdfc] border-slate-200 text-slate-900',
-        header: 'bg-gradient-to-b from-white to-rose-50/40 border-slate-200',
+        panel: 'bg-[#f8fdff] border-slate-200 text-slate-900',
+        header: 'bg-gradient-to-b from-white to-sky-50/40 border-slate-200',
         bubbleBot: 'bg-slate-100 border-slate-200 text-slate-800',
-        input: 'bg-white border-slate-200 focus:border-fuchsia-400 text-slate-900 placeholder:text-slate-400',
-        fab: 'bg-gradient-to-br from-white to-rose-50 border-slate-200',
-        notif: 'bg-gradient-to-br from-white to-rose-50/70 border-slate-200 backdrop-blur-xl',
-        glow: 'shadow-[0_40px_110px_-20px_rgba(217,70,239,0.22),0_0_0_1px_rgba(0,0,0,0.04)]',
-        fabGlow: 'shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_20px_55px_-10px_rgba(217,70,239,0.35)]',
-        tabActive: 'bg-gradient-to-r from-rose-500 to-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/20',
+        input: 'bg-white border-slate-200 focus:border-cyan-400 text-slate-900 placeholder:text-slate-400',
+        fab: 'bg-gradient-to-br from-white to-sky-50 border-slate-200',
+        notif: 'bg-gradient-to-br from-white to-sky-50/70 border-slate-200 backdrop-blur-xl',
+        glow: 'shadow-[0_40px_110px_-20px_rgba(14,165,233,0.22),0_0_0_1px_rgba(0,0,0,0.04)]',
+        fabGlow: 'shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_20px_55px_-10px_rgba(14,165,233,0.35)]',
+        tabActive: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-blue-500/20',
         tabInactive: 'text-slate-400 hover:text-slate-700',
-        accentText: 'text-fuchsia-600',
+        accentText: 'text-cyan-600',
         ring: 'ring-white',
       };
 
@@ -945,19 +946,19 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
             className={`hidden sm:flex relative mb-4 p-5 pr-9 rounded-2xl border items-center gap-4 cursor-pointer max-w-[320px] overflow-hidden transition-colors ${theme.notif} ${theme.glow}`}
             onClick={toggleChat}
           >
-            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-rose-400 via-fuchsia-400 to-amber-300" />
+            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-cyan-400 via-blue-500 to-teal-300" />
             <button
               onClick={(e) => { e.stopPropagation(); setShowNotification(false); }}
               className={`absolute top-2.5 right-2.5 p-1 rounded-lg transition-colors ${darkMode ? 'text-slate-600 hover:text-slate-300 hover:bg-white/5' : 'text-slate-300 hover:text-slate-600 hover:bg-slate-100'}`}
             >
               <X size={14} />
             </button>
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-fuchsia-400/50 shrink-0">
+            <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-cyan-400/50 shrink-0">
               <img src={brianProfile} alt="Brian" className="w-full h-full object-cover" />
-              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-fuchsia-400 ring-2 ${darkMode ? 'ring-[#150f19]' : 'ring-white'}`} />
+              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-cyan-400 ring-2 ${darkMode ? 'ring-[#0a1620]' : 'ring-white'}`} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-mono text-fuchsia-500 tracking-wide mb-0.5 flex items-center gap-1.5">
+              <p className="text-xs font-mono text-cyan-500 tracking-wide mb-0.5 flex items-center gap-1.5">
                 <span className="font-semibold">sonya</span> <span className={darkMode ? 'text-slate-600' : 'text-slate-300'}>//</span> new_message
               </p>
               <p className={`text-base font-semibold leading-snug ${darkMode ? 'text-white' : 'text-slate-900'}`}>
@@ -978,23 +979,23 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className={`mb-4 w-full sm:w-[460px] md:w-[34vw] lg:w-[28vw] sm:min-w-[380px] max-w-[520px] h-[80vh] sm:h-[82vh] md:h-[74vh] min-h-[480px] sm:min-h-[600px] rounded-[1.75rem] border overflow-hidden flex flex-col relative ${theme.panel} ${theme.glow}`}
             >
-              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-rose-400 via-fuchsia-400 to-amber-300 z-10" />
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-cyan-400 via-blue-500 to-teal-300 z-10" />
 
               <div className={`px-6 py-5 border-b flex justify-between items-center ${theme.header}`}>
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="relative shrink-0">
-                    <img src={brianProfile} alt="Brian" className="w-14 h-14 rounded-2xl object-cover border-2 border-fuchsia-400/50" />
-                    <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full ring-[3px] ${darkMode ? 'ring-[#150f19]' : 'ring-white'} ${status === 'online' ? 'bg-fuchsia-400' : 'bg-amber-400'}`} />
+                    <img src={brianProfile} alt="Brian" className="w-14 h-14 rounded-2xl object-cover border-2 border-cyan-400/50" />
+                    <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full ring-[3px] ${darkMode ? 'ring-[#0a1620]' : 'ring-white'} ${status === 'online' ? 'bg-cyan-400' : 'bg-teal-400'}`} />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-mono text-lg font-bold tracking-tight truncate bg-gradient-to-r from-rose-400 via-fuchsia-400 to-amber-300 bg-clip-text text-transparent">
+                    <p className="font-mono text-lg font-bold tracking-tight truncate bg-gradient-to-r from-cyan-400 via-blue-500 to-teal-300 bg-clip-text text-transparent">
                       sonya
                     </p>
                     <p className={`text-[11px] font-mono truncate -mt-0.5 mb-0.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                       brian's ai assistant
                     </p>
-                    <p className={`text-xs font-mono flex items-center gap-1.5 ${status === 'online' ? 'text-fuchsia-500' : 'text-amber-500'}`}>
-                      <Circle size={7} className={`${status === 'online' ? 'fill-fuchsia-400 text-fuchsia-400' : 'fill-amber-400 text-amber-400'} animate-pulse`} />
+                    <p className={`text-xs font-mono flex items-center gap-1.5 ${status === 'online' ? 'text-cyan-500' : 'text-teal-500'}`}>
+                      <Circle size={7} className={`${status === 'online' ? 'fill-cyan-400 text-cyan-400' : 'fill-teal-400 text-teal-400'} animate-pulse`} />
                       {status === 'online' ? 'online' : 'connecting...'}
                     </p>
                   </div>
@@ -1029,7 +1030,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                   <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                     {messages.map((msg) => (
                       <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                        <span className={`text-xs font-mono mb-1.5 px-1 font-medium ${msg.sender === 'user' ? 'text-amber-500' : 'text-fuchsia-500'}`}>
+                        <span className={`text-xs font-mono mb-1.5 px-1 font-medium ${msg.sender === 'user' ? 'text-teal-500' : 'text-cyan-500'}`}>
                           {msg.sender === 'user' ? 'you ❯' : 'sonya'}
                         </span>
                         <motion.div
@@ -1037,7 +1038,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                           animate={{ opacity: 1, y: 0 }}
                           className={`max-w-[88%] px-5 py-3.5 rounded-2xl text-base leading-relaxed border ${
                             msg.sender === 'user'
-                              ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-300 font-mono rounded-tr-md'
+                              ? 'bg-teal-500/10 border-teal-500/30 text-teal-600 dark:text-teal-300 font-mono rounded-tr-md'
                               : `${theme.bubbleBot} rounded-tl-md`
                           }`}
                         >
@@ -1047,7 +1048,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                     ))}
                     {isTyping && (
                       <div className="flex flex-col items-start">
-                        <span className="text-xs font-mono mb-1.5 px-1 font-medium text-fuchsia-500">sonya</span>
+                        <span className="text-xs font-mono mb-1.5 px-1 font-medium text-cyan-500">sonya</span>
                         <div className={`px-5 py-3.5 rounded-2xl rounded-tl-md border flex items-center gap-1.5 ${theme.bubbleBot}`}>
                           <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s] opacity-60" />
                           <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s] opacity-60" />
@@ -1078,7 +1079,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                     <button
                       type="submit"
                       disabled={!input.trim()}
-                      className="p-3 rounded-xl bg-gradient-to-br from-fuchsia-400 to-amber-400 text-[#120c14] disabled:opacity-30 hover:scale-105 active:scale-95 transition-transform"
+                      className="p-3 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 text-[#0a1620] disabled:opacity-30 hover:scale-105 active:scale-95 transition-transform"
                     >
                       <ArrowUp size={20} strokeWidth={2.5} />
                     </button>
@@ -1109,8 +1110,8 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                         )}
                       </div>
 
-                      {/* Mic control */}
-                      <div className="flex flex-col items-center gap-5 pt-6">
+                      {/* Mic control — lifted higher above the bottom edge */}
+                      <div className="flex flex-col items-center gap-5 pt-6 pb-12">
                         <p className={`text-sm font-mono tracking-wide ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                           {voiceState === 'listening' && voiceTranscript ? `"${voiceTranscript}"` : voiceStatusLabel}
                         </p>
@@ -1123,8 +1124,8 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                             voiceState === 'listening'
                               ? 'bg-red-500/10 border-red-400 text-red-500'
                               : voiceState === 'speaking'
-                              ? 'bg-violet-500/10 border-violet-400 text-violet-500'
-                              : `bg-gradient-to-br from-fuchsia-400/20 to-amber-400/20 border-fuchsia-400/50 ${darkMode ? 'text-fuchsia-300' : 'text-fuchsia-600'}`
+                              ? 'bg-indigo-500/10 border-indigo-400 text-indigo-500'
+                              : `bg-gradient-to-br from-cyan-400/20 to-blue-400/20 border-cyan-400/50 ${darkMode ? 'text-cyan-300' : 'text-cyan-600'}`
                           }`}
                         >
                           {voiceState === 'listening' && (
@@ -1136,7 +1137,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                           )}
                           {voiceState === 'speaking' && (
                             <motion.span
-                              className="absolute inset-0 rounded-full border-2 border-violet-400"
+                              className="absolute inset-0 rounded-full border-2 border-indigo-400"
                               animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0, 0.6] }}
                               transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
                             />
@@ -1152,7 +1153,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                           onClick={() => setAutoListen((v) => !v)}
                           className={`text-xs font-mono px-3 py-1.5 rounded-lg transition-colors ${
                             autoListen
-                              ? 'text-fuchsia-500'
+                              ? 'text-cyan-500'
                               : darkMode ? 'text-slate-600 hover:text-slate-400' : 'text-slate-400 hover:text-slate-600'
                           }`}
                         >
@@ -1182,9 +1183,9 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
             }
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono border transition-colors ${
               clapStatus === 'listening'
-                ? 'bg-fuchsia-500/10 border-fuchsia-400/50 text-fuchsia-500'
+                ? 'bg-cyan-500/10 border-cyan-400/50 text-cyan-500'
                 : darkMode
-                ? 'bg-[#150f19] border-white/10 text-slate-400 hover:text-slate-200'
+                ? 'bg-[#0a1620] border-white/10 text-slate-400 hover:text-slate-200'
                 : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'
             }`}
           >
@@ -1199,11 +1200,11 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
           >
             <motion.span
               className="absolute inset-0 rounded-3xl pointer-events-none"
-              style={{ background: 'radial-gradient(circle at 50% 40%, rgba(244,114,182,0.35), transparent 70%)' }}
+              style={{ background: 'radial-gradient(circle at 50% 40%, rgba(34,211,238,0.35), transparent 70%)' }}
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             />
-            <Terminal size={34} className="text-fuchsia-400 relative" strokeWidth={2} />
+            <Terminal size={34} className="text-cyan-400 relative" strokeWidth={2} />
           </motion.button>
         </div>
       )}

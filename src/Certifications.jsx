@@ -65,7 +65,7 @@ const certCategories = [
   {
     id: 'ai',
     label: 'Artificial Intelligence',
-    icon: <Cpu size={16} className="text-purple-500 shrink-0" />,
+    icon: <Cpu size={16} className="text-[#00b4ff] shrink-0" />,
     certs: [
       {
         title: 'Introduction to Predictive Modeling',
@@ -144,7 +144,7 @@ const certCategories = [
   {
     id: 'data',
     label: 'Data Analytics',
-    icon: <Database size={16} className="text-purple-500 shrink-0" />,
+    icon: <Database size={16} className="text-[#00b4ff] shrink-0" />,
     certs: [
       {
         title: 'Data Science Ethics',
@@ -160,7 +160,7 @@ const certCategories = [
   {
     id: 'design',
     label: 'Graphic Design',
-    icon: <Palette size={16} className="text-purple-500 shrink-0" />,
+    icon: <Palette size={16} className="text-[#00b4ff] shrink-0" />,
     certs: [
       {
         title: 'Basic Graphic Design Using AI-Powered Canva',
@@ -176,7 +176,7 @@ const certCategories = [
   {
     id: 'iot',
     label: 'Internet of Things',
-    icon: <Wifi size={16} className="text-purple-500 shrink-0" />,
+    icon: <Wifi size={16} className="text-[#00b4ff] shrink-0" />,
     certs: [
       {
         title: 'Embedded Systems using C',
@@ -192,7 +192,7 @@ const certCategories = [
   {
     id: 'networking',
     label: 'Networking & Systems',
-    icon: <Network size={16} className="text-purple-500 shrink-0" />,
+    icon: <Network size={16} className="text-[#00b4ff] shrink-0" />,
     certs: [
       {
         title: 'Cyber-Physical Systems: Modeling and Simulation',
@@ -208,7 +208,7 @@ const certCategories = [
   {
     id: 'programming',
     label: 'Programming',
-    icon: <Code2 size={16} className="text-purple-500 shrink-0" />,
+    icon: <Code2 size={16} className="text-[#00b4ff] shrink-0" />,
     certs: [
       {
         title: 'CSS Essentials',
@@ -260,7 +260,7 @@ const certCategories = [
   {
     id: 'softwareEngineering',
     label: 'Software Engineering',
-    icon: <ShieldCheck size={16} className="text-purple-500 shrink-0" />,
+    icon: <ShieldCheck size={16} className="text-[#00b4ff] shrink-0" />,
     certs: [
       {
         title: 'Blockchain Basics',
@@ -339,7 +339,7 @@ const certCategories = [
   {
     id: 'professional',
     label: 'Professional Training',
-    icon: <Award size={16} className="text-purple-500 shrink-0" />,
+    icon: <Award size={16} className="text-[#00b4ff] shrink-0" />,
     certs: [
       {
         title: 'Accenture Technology Academy \u2013 Certificate of Completion',
@@ -374,10 +374,10 @@ const allCerts = certCategories.flatMap((category) =>
 
 const SectionEyebrow = ({ label, icon }) => (
   <div className="flex items-center gap-4 sm:gap-6">
-    <h3 className="text-[9px] sm:text-[11px] md:text-[12px] font-black text-purple-500 uppercase tracking-[0.3em] sm:tracking-[0.6em] md:tracking-[1em] whitespace-nowrap">
+    <h3 className="text-[9px] sm:text-[11px] md:text-[12px] font-black text-[#00b4ff] uppercase tracking-[0.3em] sm:tracking-[0.6em] md:tracking-[1em] whitespace-nowrap">
       {label}
     </h3>
-    <div className="h-[1px] flex-1 bg-purple-500/20"></div>
+    <div className="h-[1px] flex-1 bg-[#00b4ff]/20"></div>
     {icon}
   </div>
 );
@@ -385,17 +385,17 @@ const SectionEyebrow = ({ label, icon }) => (
 const CertCard = ({ cert, darkMode, onSelect }) => (
   <div
     onClick={() => onSelect(cert)}
-    className={`group relative flex flex-col gap-5 sm:gap-6 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border backdrop-blur-md cursor-pointer transition-all duration-500 hover:-translate-y-1 shadow-lg ${
+    className={`group relative flex flex-col gap-5 sm:gap-6 p-6 sm:p-8 rounded-md sm:rounded-md border backdrop-blur-md cursor-pointer transition-all duration-500 hover:-translate-y-1 shadow-lg ${
       darkMode
-        ? 'bg-white/5 border-purple-500/10 hover:border-purple-500/30'
-        : 'bg-white/70 border-purple-200 hover:border-purple-400'
+        ? 'bg-white/5 border-[#00b4ff]/10 hover:border-[#00b4ff]/30'
+        : 'bg-white/70 border-[#99f5ff] hover:border-[#00e5ff]'
     }`}
   >
-    <div className="absolute top-5 right-5 sm:top-6 sm:right-6 flex items-center gap-1 bg-purple-600 text-white text-[8px] sm:text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest">
+    <div className="absolute top-5 right-5 sm:top-6 sm:right-6 flex items-center gap-1 bg-[#0088ff] text-white text-[8px] sm:text-[9px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest">
       <BadgeCheck size={11} /> Verified
     </div>
 
-    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white flex items-center justify-center shadow-md overflow-hidden shrink-0 p-3">
+    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-md bg-white flex items-center justify-center shadow-md overflow-hidden shrink-0 p-3">
       <img src={cert.logo} alt={cert.issuer} className="w-full h-full object-contain" />
     </div>
 
@@ -403,16 +403,16 @@ const CertCard = ({ cert, darkMode, onSelect }) => (
       <h4 className="text-base sm:text-lg font-black leading-tight text-slate-900 dark:text-white">
         {cert.title}
       </h4>
-      <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-purple-400/70">
+      <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-[#00e5ff]/70">
         {cert.issuer}
       </p>
     </div>
 
-    <div className="flex items-center justify-between pt-4 border-t border-purple-500/10">
+    <div className="flex items-center justify-between pt-4 border-t border-[#00b4ff]/10">
       <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-40">
         {cert.date}
       </span>
-      <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-purple-500 opacity-60 group-hover:opacity-100 transition-opacity">
+      <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[#00b4ff] opacity-60 group-hover:opacity-100 transition-opacity">
         View
         <ChevronRight size={12} />
       </span>
@@ -440,10 +440,10 @@ const CertModal = ({ cert, darkMode, onClose }) => {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[2rem] sm:rounded-[2.5rem] border shadow-2xl animate-scale-in ${
+        className={`relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-md sm:rounded-md border shadow-2xl animate-scale-in ${
           darkMode
-            ? 'bg-purple-950/90 border-purple-500/20 text-purple-50'
-            : 'bg-white border-purple-200 text-slate-900'
+            ? 'bg-[#001a33]/90 border-[#00b4ff]/20 text-[#e0f4ff]'
+            : 'bg-white border-[#99f5ff] text-slate-900'
         }`}
       >
         <div className="sticky top-0 z-10 flex justify-end p-3 sm:p-4">
@@ -462,15 +462,15 @@ const CertModal = ({ cert, darkMode, onClose }) => {
           // Certificate screenshot + issuer logo shown together:
           // big screenshot fills the frame, small logo badge overlaps
           // its bottom-left corner so both are visible at once.
-          <div className={`relative flex items-center justify-center p-4 sm:p-6 max-h-[50vh] ${darkMode ? 'bg-black/20' : 'bg-purple-50'}`}>
+          <div className={`relative flex items-center justify-center p-4 sm:p-6 max-h-[50vh] ${darkMode ? 'bg-black/20' : 'bg-[#e0f4ff]'}`}>
             <img
               src={cert.img}
               alt={cert.title}
-              className="w-full max-h-[46vh] object-contain rounded-xl"
+              className="w-full max-h-[46vh] object-contain rounded-md"
             />
             <div
-              className={`absolute bottom-3 left-3 sm:bottom-5 sm:left-5 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white flex items-center justify-center shadow-lg overflow-hidden p-2 border-2 ${
-                darkMode ? 'border-purple-950' : 'border-white'
+              className={`absolute bottom-3 left-3 sm:bottom-5 sm:left-5 w-12 h-12 sm:w-14 sm:h-14 rounded-md bg-white flex items-center justify-center shadow-lg overflow-hidden p-2 border-2 ${
+                darkMode ? 'border-[#001a33]' : 'border-white'
               }`}
             >
               <img src={cert.logo} alt={cert.issuer} className="w-full h-full object-contain" />
@@ -478,15 +478,15 @@ const CertModal = ({ cert, darkMode, onClose }) => {
           </div>
         ) : (
           // No screenshot yet: fall back to showing just the logo, larger.
-          <div className={`flex items-center justify-center p-8 sm:p-10 ${darkMode ? 'bg-white/5' : 'bg-purple-50'}`}>
-            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-white flex items-center justify-center shadow-lg overflow-hidden p-5">
+          <div className={`flex items-center justify-center p-8 sm:p-10 ${darkMode ? 'bg-white/5' : 'bg-[#e0f4ff]'}`}>
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-md bg-white flex items-center justify-center shadow-lg overflow-hidden p-5">
               <img src={cert.logo} alt={cert.issuer} className="w-full h-full object-contain" />
             </div>
           </div>
         )}
 
         <div className="p-6 sm:p-8 space-y-5 sm:space-y-6">
-          <div className="flex items-center gap-1.5 bg-purple-600 text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest w-fit">
+          <div className="flex items-center gap-1.5 bg-[#0088ff] text-white text-[9px] font-black px-2.5 py-1 rounded-md uppercase tracking-widest w-fit">
             <BadgeCheck size={11} /> Verified Credential
           </div>
 
@@ -494,10 +494,10 @@ const CertModal = ({ cert, darkMode, onClose }) => {
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-[10px] sm:text-[11px] font-black uppercase tracking-widest opacity-60">
             <span className="flex items-center gap-1.5">
-              <Building2 size={13} className="text-purple-500" /> {cert.issuer}
+              <Building2 size={13} className="text-[#00b4ff]" /> {cert.issuer}
             </span>
             <span className="flex items-center gap-1.5">
-              <Calendar size={13} className="text-purple-500" /> {cert.date}
+              <Calendar size={13} className="text-[#00b4ff]" /> {cert.date}
             </span>
           </div>
 
@@ -513,7 +513,7 @@ const CertModal = ({ cert, darkMode, onClose }) => {
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-2 pt-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-purple-500 hover:text-purple-400 transition-colors"
+              className="inline-flex items-center gap-2 pt-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-[#00b4ff] hover:text-[#00e5ff] transition-colors"
             >
               View Original Credential <ExternalLink size={13} />
             </a>
@@ -570,7 +570,7 @@ export function CertificationsPreview({ darkMode = true, count = 4, onViewAll })
 
       <SectionEyebrow
         label="Certifications"
-        icon={<ShieldCheck size={16} className="text-purple-500 shrink-0" />}
+        icon={<ShieldCheck size={16} className="text-[#00b4ff] shrink-0" />}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
@@ -582,10 +582,10 @@ export function CertificationsPreview({ darkMode = true, count = 4, onViewAll })
       {onViewAll && (
         <button
           onClick={onViewAll}
-          className={`w-full flex items-center justify-center gap-3 py-5 sm:py-6 rounded-[2rem] sm:rounded-[2.5rem] border font-black text-xs uppercase tracking-widest transition-all hover:-translate-y-0.5 ${
+          className={`w-full flex items-center justify-center gap-3 py-5 sm:py-6 rounded-md sm:rounded-md border font-black text-xs uppercase tracking-widest transition-all hover:-translate-y-0.5 ${
             darkMode
-              ? 'bg-white/5 border-purple-500/10 hover:border-purple-500/30 text-purple-300'
-              : 'bg-white/70 border-purple-200 hover:border-purple-400 text-purple-600'
+              ? 'bg-white/5 border-[#00b4ff]/10 hover:border-[#00b4ff]/30 text-[#66f0ff]'
+              : 'bg-white/70 border-[#99f5ff] hover:border-[#00e5ff] text-[#b3e0ff]'
           }`}
         >
           View All Certificates <ArrowRight size={16} />
