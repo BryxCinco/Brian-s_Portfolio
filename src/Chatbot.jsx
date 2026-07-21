@@ -27,6 +27,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
   const lastJokeIndexRef = useRef(-1);
 
   // Expose an imperative "open" method so the mobile navigation bar
+  // (which owns its own trigger icon in place of the floating bubble)
   // can open this widget from the parent component.
   useImperativeHandle(ref, () => ({
     open: () => {
@@ -510,12 +511,13 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
         )}
       </AnimatePresence>
 
+      {/* Floating trigger button — hidden on mobile, visible on sm+ */}
       {!isOpen && (
         <motion.button
           whileHover={{ scale: 1.06 }}
           whileTap={{ scale: 0.92 }}
           onClick={toggleChat}
-          className={`relative p-6 rounded-3xl border overflow-hidden ${theme.fab} ${theme.fabGlow}`}
+          className={`hidden sm:flex relative p-6 rounded-3xl border overflow-hidden ${theme.fab} ${theme.fabGlow}`}
         >
           <motion.span
             className="absolute inset-0 rounded-3xl pointer-events-none"
