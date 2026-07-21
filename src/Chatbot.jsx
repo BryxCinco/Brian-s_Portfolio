@@ -1,237 +1,32 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { Terminal, X, ArrowUp, Circle, Mic, MicOff, MessageSquare, AudioLines, Loader2 } from 'lucide-react';
+import { Terminal, X, ArrowUp, Circle, Mic, MicOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Import ng profile pic mo
 import brianProfile from './assets/Sonya.png';
 
-const WAVE_BARS = 52;
-
-// Animated sound-wave bars shown in Voice mode while listening/speaking.
-// While listening it's driven by the real mic input (via AnalyserNode).
-// While speaking it's driven by a simulated human-speech envelope
-// (since browsers don't expose the raw audio of speechSynthesis directly),
-// nudged by word-boundary events so the pulses roughly track the words.
-//
-// Visual upgrade: bars mirror up + down from a center line (classic
-// audio-visualizer look), each bar has its own gradient + soft glow,
-// a blurred "aura" pulses behind the whole thing in sync with the
-// average volume, and rippling rings expand outward so the whole thing
-// feels alive instead of just bars ticking up/down.
-const VoiceWave = ({ active, levels, state, darkMode }) => {
-  const avg = active
-    ? levels.reduce((a, b) => a + b, 0) / Math.max(1, levels.length)
-    : 0.05;
-
-  // A calm, immersive Ocean Blue palette — teal → cyan → deep blue —
-  // that stays consistent across states but shifts mood: bright
-  // cyan-teal while listening, deeper blue-indigo while she's speaking,
-  // soft misty blue at rest.
-  const palette =
-    state === 'listening'
-      ? { from: '#2dd4bf', mid: '#22d3ee', to: '#38bdf8', glow: 'rgba(34,211,238,0.65)', glow2: 'rgba(45,212,191,0.4)' }
-      : state === 'speaking'
-      ? { from: '#38bdf8', mid: '#3b82f6', to: '#6366f1', glow: 'rgba(59,130,246,0.65)', glow2: 'rgba(56,189,248,0.4)' }
-      : {
-          from: darkMode ? '#0f2e3d' : '#bae6fd',
-          mid: darkMode ? '#123a4d' : '#a5f3fc',
-          to: darkMode ? '#0f2e3d' : '#bae6fd',
-          glow: 'rgba(14,165,233,0.22)',
-          glow2: 'rgba(14,165,233,0.12)',
-        };
-
-  return (
-    <div className="relative flex items-center justify-center flex-1 w-full min-h-[140px] sm:min-h-[260px] max-h-[460px]">
-      {/* Big breathing aura — fills most of the box, sways with volume */}
-      <motion.div
-        className="absolute rounded-full blur-3xl pointer-events-none"
-        style={{ background: palette.glow, width: '85%', height: '85%', maxWidth: 380, maxHeight: 380 }}
-        animate={{
-          opacity: active ? [0.3, 0.6, 0.3] : 0.15,
-          scale: active ? [1, 1.18 + avg * 0.45, 1] : 1,
-        }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute rounded-full blur-2xl pointer-events-none"
-        style={{ background: palette.glow2, width: '55%', height: '55%', maxWidth: 260, maxHeight: 260 }}
-        animate={{
-          opacity: active ? [0.35, 0.7, 0.35] : 0.18,
-          scale: active ? [1, 1.3, 1] : 1,
-          rotate: active ? [0, 25, 0] : 0,
-        }}
-        transition={{ duration: 2.1, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* Slow rotating halo ring — gives it that "alive" glamour-shot glow */}
-      <motion.div
-        className="absolute rounded-full pointer-events-none"
-        style={{
-          width: '72%',
-          height: '72%',
-          maxWidth: 320,
-          maxHeight: 320,
-          background: `conic-gradient(from 0deg, ${palette.from}22, ${palette.mid}55, ${palette.to}22, transparent, ${palette.from}22)`,
-          opacity: active ? 0.55 : 0.2,
-        }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
-      />
-
-      {/* Concentric rings that ripple outward while listening/speaking */}
-      {active &&
-        [0, 1, 2, 3].map((ring) => (
-          <motion.span
-            key={ring}
-            className="absolute rounded-full border pointer-events-none"
-            style={{ borderColor: palette.glow, width: 70, height: 70 }}
-            animate={{ scale: [1, 4.2], opacity: [0.4, 0] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut', delay: ring * 0.6 }}
-          />
-        ))}
-
-      {/* Floating shimmer motes — tiny sparks drifting around the wave */}
-      {active &&
-        Array.from({ length: 8 }).map((_, i) => {
-          const angle = (i / 8) * Math.PI * 2;
-          const radius = 42 + (i % 3) * 6;
-          return (
-            <motion.span
-              key={`mote-${i}`}
-              className="absolute rounded-full pointer-events-none"
-              style={{
-                width: 4 + (i % 3),
-                height: 4 + (i % 3),
-                background: palette.mid,
-                boxShadow: `0 0 8px 2px ${palette.glow}`,
-                left: `calc(50% + ${Math.cos(angle) * radius}%)`,
-                top: `calc(50% + ${Math.sin(angle) * radius * 0.5}%)`,
-              }}
-              animate={{
-                opacity: [0, 0.9, 0],
-                scale: [0.4, 1.1, 0.4],
-              }}
-              transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
-            />
-          );
-        })}
-
-      {/* Main wave — sized to fill the box, curvy & full-bodied */}
-      <div className="relative flex items-center justify-center gap-[2.5px] h-[72%] w-[92%] px-1">
-        {Array.from({ length: WAVE_BARS }).map((_, i) => {
-          const lvl = active ? (levels[i] ?? 0.15) : 0.1 + Math.sin(i * 0.4 + Date.now() / 900) * 0.05;
-          // Slight per-bar phase offset so neighboring bars don't move in
-          // lockstep — reads as an organic, curvy, "wavering" ripple —
-          // plus a gentle bell-curve taper so the center reads fuller/rounder
-          // (a soft hourglass silhouette rather than flat bars).
-          const taper = 0.55 + 0.45 * Math.sin((i / (WAVE_BARS - 1)) * Math.PI);
-          const wobble = active ? 1 + Math.sin(i * 0.6 + Date.now() / 220) * 0.08 : 1;
-          const heightPct = Math.min(100, Math.max(4, lvl * 100 * taper * wobble));
-          const isPeak = active && lvl > 0.68;
-          return (
-            <motion.span
-              key={i}
-              className="relative rounded-full origin-center"
-              style={{
-                width: 4.5,
-                background: `linear-gradient(180deg, ${palette.from}, ${palette.mid} 50%, ${palette.to})`,
-                boxShadow: isPeak
-                  ? `0 0 16px 2px ${palette.glow}`
-                  : `0 0 6px 0 ${palette.glow2}`,
-              }}
-              animate={{ height: `${heightPct}%`, opacity: active ? 1 : 0.6 }}
-              transition={{ duration: 0.08, ease: 'easeOut' }}
-            />
-          );
-        })}
-      </div>
-
-      {/* Reflection — a faint upside-down echo of the wave for depth */}
-      <div
-        className="absolute inset-x-0 bottom-[8%] flex items-end justify-center gap-[2.5px] h-[26%] w-[92%] px-1 pointer-events-none scale-y-[-1]"
-        style={{ opacity: darkMode ? 0.2 : 0.12, maskImage: 'linear-gradient(to bottom, black, transparent)' }}
-      >
-        {Array.from({ length: WAVE_BARS }).map((_, i) => {
-          const lvl = active ? (levels[i] ?? 0.15) : 0.06;
-          const heightPct = Math.max(3, lvl * 90);
-          return (
-            <motion.span
-              key={`refl-${i}`}
-              className="rounded-full"
-              style={{ width: 4.5, background: `linear-gradient(180deg, ${palette.mid}, transparent)` }}
-              animate={{ height: `${heightPct}%` }}
-              transition={{ duration: 0.08, ease: 'easeOut' }}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
 const Chatbot = forwardRef(({ darkMode }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [mode, setMode] = useState('chat'); // 'chat' | 'voice'
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [status, setStatus] = useState('online');
   const [messages, setMessages] = useState([
-    { id: 1, text: "Hi! I'm Sonya, Brian's AI Assistant. Ask me anything about his projects, tools, tech stack, or even what he does off the keyboard! 👋", sender: 'bot' }
+    { id: 1, text: "Hi! I'm Brian's AI Assistant. Ask me anything about his projects, tools, tech stack, or even what he does off the keyboard! 👋", sender: 'bot' }
   ]);
 
-  // Voice mode state machine: 'idle' | 'listening' | 'thinking' | 'speaking'
-  const [voiceState, setVoiceState] = useState('idle');
-  const [voiceTranscript, setVoiceTranscript] = useState('');
+  // Speech-to-text dictation state
+  const [isDictating, setIsDictating] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(true);
-  const [autoListen, setAutoListen] = useState(true);
-  // Surfaces *why* voice mode won't start (mic blocked, insecure context,
-  // etc.) instead of silently reverting to idle with no explanation.
   const [micError, setMicError] = useState('');
-
-  // Live sound-wave bar heights (0..1) for the voice mode visualizer
-  const [waveLevels, setWaveLevels] = useState(() => Array(WAVE_BARS).fill(0.1));
-
-  // Clap-to-activate: 'off' (not enabled yet / permission not granted),
-  // 'listening' (mic is armed and waiting for a clap), 'denied' (user
-  // declined mic access or the browser blocked it)
-  const [clapStatus, setClapStatus] = useState('off');
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
-  const modeRef = useRef(mode);
-  const autoListenRef = useRef(autoListen);
-  const isOpenRef = useRef(false);
   const lastResponseIndexRef = useRef(-1);
   const lastJokeIndexRef = useRef(-1);
 
-  // Clap-listener plumbing (separate mic stream from the dictation one,
-  // so it can keep running quietly in the background while the widget is closed)
-  const clapStreamRef = useRef(null);
-  const clapCtxRef = useRef(null);
-  const clapAnalyserRef = useRef(null);
-  const clapRafRef = useRef(null);
-  const lastClapTimeRef = useRef(0);
-  const clapAboveThresholdRef = useRef(false);
-
-  // Waveform / mic-visualizer plumbing
-  const waveAnimRef = useRef(null);
-  const micStreamRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const speakingPulseRef = useRef(false);
-  const pulseTimeoutRef = useRef(null);
-
-  // Available system voices, used to pick the most natural-sounding one
-  const voicesRef = useRef([]);
-
-  useEffect(() => { modeRef.current = mode; }, [mode]);
-  useEffect(() => { autoListenRef.current = autoListen; }, [autoListen]);
-  useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
-
   // Expose an imperative "open" method so the mobile navigation bar
-  // (which owns its own trigger icon in place of the floating bubble)
   // can open this widget from the parent component.
   useImperativeHandle(ref, () => ({
     open: () => {
@@ -240,26 +35,13 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
     },
   }));
 
-  // Load speechSynthesis voices (some browsers populate this list async)
-  useEffect(() => {
-    if (!('speechSynthesis' in window)) return;
-    const loadVoices = () => { voicesRef.current = window.speechSynthesis.getVoices() || []; };
-    loadVoices();
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
-  }, []);
-
-  // Speech recognition setup (shared by both modes)
+  // Speech recognition setup (dictation only — no speech synthesis)
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setVoiceSupported(false);
       return;
     }
-    // getUserMedia/SpeechRecognition are only available in a "secure
-    // context" (HTTPS, or localhost). If this ever gets embedded/proxied
-    // over plain HTTP, voice mode will silently refuse to start — this
-    // makes that failure visible instead of a mystery.
     if (typeof window.isSecureContext === 'boolean' && !window.isSecureContext) {
       setVoiceSupported(false);
       return;
@@ -271,388 +53,56 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
 
     recognitionRef.current.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
-      if (modeRef.current === 'voice') {
-        setVoiceTranscript(transcript);
-        processUserInput(transcript, 'voice');
-      } else {
-        setInput(transcript);
-        setVoiceState('idle');
-      }
+      setInput((prev) => (prev ? prev + ' ' + transcript : transcript));
+      setIsDictating(false);
     };
 
     recognitionRef.current.onend = () => {
-      setVoiceState((prev) => (prev === 'listening' ? 'idle' : prev));
+      setIsDictating(false);
     };
 
     recognitionRef.current.onerror = (event) => {
-      setVoiceState('idle');
+      setIsDictating(false);
       if (event?.error === 'not-allowed' || event?.error === 'service-not-allowed') {
         setMicError('Mic access is blocked. Allow microphone permission for this site in your browser settings, then try again.');
       } else if (event?.error === 'network') {
         setMicError('Speech recognition needs an internet connection. Check your connection and try again.');
       } else if (event?.error && event.error !== 'no-speech' && event.error !== 'aborted') {
-        setMicError('Voice input hit a snag (' + event.error + '). Try again, or use Chat mode.');
+        setMicError('Voice input hit a snag (' + event.error + '). Try again.');
       }
     };
 
     return () => {
       recognitionRef.current?.stop?.();
-      window.speechSynthesis?.cancel?.();
-      if (waveAnimRef.current) cancelAnimationFrame(waveAnimRef.current);
-      micStreamRef.current?.getTracks?.().forEach((t) => t.stop());
-      audioContextRef.current?.close?.();
-      clearTimeout(pulseTimeoutRef.current);
-      stopClapListener();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- Sound-wave visualizer -------------------------------------------
-  // Listening: real mic amplitude via Web Audio's AnalyserNode.
-  // Speaking: a simulated human-speech envelope (sine + noise), with a
-  // little extra "pop" on each word boundary so it feels responsive.
-  const stopWaveLoop = () => {
-    if (waveAnimRef.current) {
-      cancelAnimationFrame(waveAnimRef.current);
-      waveAnimRef.current = null;
-    }
-  };
-
-  const teardownMic = () => {
-    micStreamRef.current?.getTracks?.().forEach((t) => t.stop());
-    audioContextRef.current?.close?.().catch?.(() => {});
-    micStreamRef.current = null;
-    audioContextRef.current = null;
-    analyserRef.current = null;
-  };
-
-  const startMicVisualizer = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micStreamRef.current = stream;
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      const audioCtx = new AudioCtx();
-      audioContextRef.current = audioCtx;
-      const source = audioCtx.createMediaStreamSource(stream);
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 64;
-      analyser.smoothingTimeConstant = 0.75;
-      source.connect(analyser);
-      analyserRef.current = analyser;
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      const step = Math.max(1, Math.floor(data.length / WAVE_BARS));
-
-      const loop = () => {
-        analyser.getByteFrequencyData(data);
-        const levels = Array.from({ length: WAVE_BARS }, (_, i) => data[i * step] / 255);
-        setWaveLevels(levels);
-        waveAnimRef.current = requestAnimationFrame(loop);
-      };
-      loop();
-    } catch (err) {
-      // Mic access denied/unavailable — fall back to a gentle idle pulse
-      const loop = () => {
-        const t = Date.now() / 300;
-        setWaveLevels(Array.from({ length: WAVE_BARS }, (_, i) => (Math.sin(t + i * 0.3) + 1) / 4 + 0.1));
-        waveAnimRef.current = requestAnimationFrame(loop);
-      };
-      loop();
-    }
-  };
-
-  const startSpeakingVisualizer = () => {
-    let t = 0;
-    const loop = () => {
-      // Faster oscillation + bigger envelope + a stronger pop on each word
-      // boundary — reads as animated, energetic, genuinely into it, rather
-      // than a flat monotone hum.
-      t += 0.3;
-      const pulse = speakingPulseRef.current ? 0.5 : 0;
-      const levels = Array.from({ length: WAVE_BARS }, (_, i) => {
-        const phase = i * 0.45;
-        const envelope = (Math.sin(t + phase) + 1) / 2;
-        const flair = (Math.sin(t * 2.3 + phase * 0.6) + 1) / 2; // fast secondary ripple for extra life
-        const noise = Math.random() * 0.22;
-        return Math.min(1, envelope * 0.72 + flair * 0.2 + noise + pulse);
-      });
-      setWaveLevels(levels);
-      waveAnimRef.current = requestAnimationFrame(loop);
-    };
-    loop();
-  };
-
-  useEffect(() => {
-    const shouldListen = mode === 'voice' && voiceState === 'listening';
-    const shouldSpeak = mode === 'voice' && voiceState === 'speaking';
-    stopWaveLoop();
-    if (shouldListen) {
-      startMicVisualizer();
-    } else if (shouldSpeak) {
-      teardownMic();
-      startSpeakingVisualizer();
-    } else {
-      teardownMic();
-      setWaveLevels(Array(WAVE_BARS).fill(0.1));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voiceState, mode]);
-
-  // --- Clap-to-activate ---------------------------------------------------
-  // Runs a lightweight, separate mic stream + AnalyserNode while the widget
-  // is closed. It looks for a short, sharp volume spike (a clap) in the raw
-  // time-domain waveform — a clap has a very fast attack (loud within a few
-  // milliseconds) and a quick decay, unlike speech or steady background noise.
-  const stopClapListener = () => {
-    if (clapRafRef.current) {
-      cancelAnimationFrame(clapRafRef.current);
-      clapRafRef.current = null;
-    }
-    clapStreamRef.current?.getTracks?.().forEach((t) => t.stop());
-    clapCtxRef.current?.close?.().catch?.(() => {});
-    clapStreamRef.current = null;
-    clapCtxRef.current = null;
-    clapAnalyserRef.current = null;
-  };
-
-  const handleClapDetected = () => {
-    if (isOpenRef.current) return; // already open, nothing to do
-    stopClapListener();
-    setIsOpen(true);
-    setShowNotification(false);
-    setMode('voice');
-    // Small delay so the panel has finished mounting before we speak
-    setTimeout(() => {
-      setVoiceState('speaking');
-      speak("Hello, I'm Sonya, Brian's AI Assistant. How can I help you?", () => {
-        setVoiceState('idle');
-        if (autoListenRef.current) startListening();
-      });
-    }, 350);
-  };
-
-  const startClapListener = async () => {
-    if (clapStreamRef.current) return; // already running
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      clapStreamRef.current = stream;
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioCtx();
-      if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
-      clapCtxRef.current = ctx;
-      const source = ctx.createMediaStreamSource(stream);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.15;
-      source.connect(analyser);
-      clapAnalyserRef.current = analyser;
-      setClapStatus('listening');
-
-      const data = new Uint8Array(analyser.fftSize);
-      const CLAP_PEAK_THRESHOLD = 0.45; // 0..1, how loud/sharp the spike must be
-      const CLAP_RESET_THRESHOLD = 0.2; // must drop back below this before it can re-trigger
-      const CLAP_COOLDOWN_MS = 1200;
-
-      const loop = () => {
-        analyser.getByteTimeDomainData(data);
-        let peak = 0;
-        for (let i = 0; i < data.length; i++) {
-          const v = Math.abs(data[i] - 128) / 128;
-          if (v > peak) peak = v;
-        }
-        const now = Date.now();
-        if (
-          peak > CLAP_PEAK_THRESHOLD &&
-          !clapAboveThresholdRef.current &&
-          now - lastClapTimeRef.current > CLAP_COOLDOWN_MS
-        ) {
-          clapAboveThresholdRef.current = true;
-          lastClapTimeRef.current = now;
-          handleClapDetected();
-          return; // stopClapListener() (called inside handleClapDetected) tears the loop down
-        } else if (peak < CLAP_RESET_THRESHOLD) {
-          clapAboveThresholdRef.current = false;
-        }
-        clapRafRef.current = requestAnimationFrame(loop);
-      };
-      loop();
-    } catch (err) {
-      // Mic permission denied, no mic available, or browser blocked it
-      setClapStatus('denied');
-    }
-  };
-
-  // Arm/disarm the clap listener based on whether the widget is open.
-  // Only runs once the user has opted in (see the "clap to talk" pill below) —
-  // most browsers won't grant mic access without an explicit user gesture.
-  useEffect(() => {
-    if (isOpen) {
-      stopClapListener();
-    } else if (clapStatus !== 'off') {
-      startClapListener();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
-
-  const enableClapToTalk = () => {
-    if (clapStatus === 'listening') {
-      setClapStatus('off');
-      stopClapListener();
-    } else {
-      startClapListener();
-    }
-  };
-
-  const startListening = () => {
+  const startDictation = () => {
     if (!recognitionRef.current) return;
     setMicError('');
     try {
-      setVoiceTranscript('');
-      setVoiceState('listening');
+      setIsDictating(true);
       recognitionRef.current.start();
     } catch (err) {
-      // "already started" is harmless and expected if a start slips in
-      // while one is in flight; anything else means it genuinely failed.
       if (err?.name !== 'InvalidStateError') {
-        setVoiceState('idle');
+        setIsDictating(false);
         setMicError('Could not start the mic. Try again.');
       }
     }
   };
 
-  const stopListening = () => {
+  const stopDictation = () => {
     recognitionRef.current?.stop?.();
-    setVoiceState('idle');
+    setIsDictating(false);
   };
 
-  // Chat-mode dictation toggle (mic icon inside the text input bar)
   const toggleDictation = () => {
-    if (voiceState === 'listening') {
-      stopListening();
+    if (isDictating) {
+      stopDictation();
     } else {
-      startListening();
+      startDictation();
     }
-  };
-
-  // Voice-mode big-button toggle: tap to start/stop the whole voice session
-  const toggleVoiceSession = () => {
-    if (voiceState === 'idle') {
-      startListening();
-    } else {
-      window.speechSynthesis?.cancel?.();
-      stopListening();
-    }
-  };
-
-  // Picks the voice used for spoken replies.
-  // Sonya is a female assistant, so she should default to a FEMALE voice —
-  // and it must keep working with no internet connection. Many "Natural"/
-  // "Online" voices are actually cloud-streamed — great quality, but they
-  // silently fail or fall back once offline. Device-local voices
-  // (voice.localService === true) are baked into the OS/browser and always
-  // work, so when we're offline (or can't tell) we restrict the candidate
-  // pool to those first.
-  const FEMALE_VOICE_PREFERENCES = [
-    'Microsoft Aria Online (Natural)', 'Microsoft Aria', 'Microsoft Jenny Online (Natural)', 'Microsoft Jenny',
-    'Microsoft Michelle', 'Google US English', 'Google UK English Female',
-    'Samantha', 'Ava', 'Emma', 'Amy', 'Victoria', 'Karen', 'Moira', 'Tessa',
-    'Susan', 'Fiona', 'Kate', 'Serena', 'Allison', 'Microsoft Zira Desktop', 'Microsoft Zira',
-  ];
-  const MALE_NAME_HINTS = [
-    'david', 'guy', 'mark', 'daniel', 'alex', 'fred', 'arthur', 'aaron', 'oliver',
-    'thomas', 'james', 'gordon', 'ryan', 'andrew', 'male', 'man', 'boy',
-  ];
-
-  const pickVoice = () => {
-    const voices = voicesRef.current;
-    if (!voices.length) return null;
-
-    const englishVoices = voices.filter((v) => v.lang?.startsWith('en'));
-    const pool = englishVoices.length ? englishVoices : voices;
-
-    // If we're offline (or the browser won't tell us), only trust voices
-    // that are guaranteed to run locally on-device — no network required.
-    const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;
-    const offlineSafe = pool.filter((v) => v.localService !== false);
-    const candidates = isOnline ? pool : (offlineSafe.length ? offlineSafe : pool);
-    // Even online, prefer local voices first — they're instant and never
-    // depend on connection quality, with the full pool as a backup.
-    const ordered = [...offlineSafe, ...candidates.filter((v) => !offlineSafe.includes(v))];
-
-    for (const name of FEMALE_VOICE_PREFERENCES) {
-      const match = ordered.find((v) => v.name.includes(name));
-      if (match) return match;
-    }
-    // No exact-name hit — fall back to any voice that doesn't look male.
-    const notMale = ordered.find(
-      (v) => !MALE_NAME_HINTS.some((hint) => v.name.toLowerCase().includes(hint))
-    );
-    if (notMale) return notMale;
-    return ordered[0] || voices[0];
-  };
-
-  const speak = (text, onDone) => {
-    if (!('speechSynthesis' in window)) {
-      onDone?.();
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const voice = pickVoice();
-    // Break into sentences and speak them back-to-back with a tiny natural
-    // pause between each — a single long utterance tends to sound flat and
-    // robotic, while short chained utterances with slight rate/pitch jitter
-    // read as calm, smooth, and human.
-    const sentences = text.match(/[^.!?]+[.!?]*/g)?.map((s) => s.trim()).filter(Boolean) || [text];
-    let i = 0;
-
-    // A stable youthful, energetic center for this whole reply — picked once
-    // so consecutive sentences flow smoothly into each other instead of
-    // lurching between random pitches (which is what reads as "stiff").
-    // Small ± drift per sentence keeps it feeling human, not robotic-flat.
-    const centerPitch = 1.12 + Math.random() * 0.06; // bright, youthful
-    const centerRate = 1.1 + Math.random() * 0.05; // brisk, lively pace
-
-    const speakNext = () => {
-      if (i >= sentences.length) {
-        onDone?.();
-        return;
-      }
-      const sentence = sentences[i];
-      const isExcited = /!\s*$/.test(sentence);
-      const isQuestion = /\?\s*$/.test(sentence);
-
-      const utterance = new SpeechSynthesisUtterance(sentence);
-      if (voice) utterance.voice = voice;
-      utterance.lang = voice?.lang || 'en-US';
-      // Gentle drift around the center, not big random jumps — smooth and
-      // continuous. Exclamations get a touch more lift; questions curl up.
-      let pitch = centerPitch + (Math.random() - 0.5) * 0.05;
-      let rate = centerRate + (Math.random() - 0.5) * 0.04;
-      if (isExcited) {
-        pitch += 0.08;
-        rate += 0.05;
-      } else if (isQuestion) {
-        pitch += 0.05;
-      }
-      utterance.pitch = Math.min(1.7, pitch);
-      utterance.rate = Math.min(1.35, rate);
-      utterance.volume = 1;
-      utterance.onboundary = () => {
-        speakingPulseRef.current = true;
-        clearTimeout(pulseTimeoutRef.current);
-        pulseTimeoutRef.current = setTimeout(() => { speakingPulseRef.current = false; }, 160);
-      };
-      utterance.onend = () => {
-        i += 1;
-        // Tight gap keeps her sounding lively and continuous, not choppy.
-        setTimeout(speakNext, isQuestion ? 100 : 35);
-      };
-      utterance.onerror = () => {
-        i += 1;
-        speakNext();
-      };
-      window.speechSynthesis.speak(utterance);
-    };
-    speakNext();
   };
 
   useEffect(() => {
@@ -666,33 +116,21 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isTyping, mode]);
+  }, [messages, isTyping]);
 
-  // Shared pipeline: takes raw text from either the input box or the mic,
+  // Shared pipeline: takes raw text from the input box,
   // adds it to the transcript, and produces a bot reply.
-  const processUserInput = (text, source = 'chat') => {
+  const processUserInput = (text) => {
     if (!text?.trim()) return;
     const userMsg = { id: Date.now(), text, sender: 'user' };
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
-    if (source === 'voice') setVoiceState('thinking');
 
     const lower = text.toLowerCase();
 
     const deliverReply = (botReply) => {
       setMessages((prev) => [...prev, { id: Date.now() + 1, text: botReply, sender: 'bot' }]);
       setIsTyping(false);
-
-      if (source === 'voice') {
-        setVoiceState('speaking');
-        speak(botReply, () => {
-          setVoiceState('idle');
-          // Keep the conversation going hands-free until the user stops it
-          if (modeRef.current === 'voice' && autoListenRef.current) {
-            startListening();
-          }
-        });
-      }
     };
 
     // Weather needs a real network round-trip (geolocation + forecast API),
@@ -712,7 +150,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
   const handleSend = (e) => {
     e?.preventDefault?.();
     if (!input.trim()) return;
-    processUserInput(input, 'chat');
+    processUserInput(input);
     setInput('');
   };
 
@@ -754,7 +192,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
             );
             const data = await res.json();
             const temp = Math.round(data?.current?.temperature_2m);
-            const desc = WEATHER_CODES[data?.current?.weather_code] ?? 'some kind of weather I can\'t quite classify';
+            const desc = WEATHER_CODES[data?.current?.weather_code] ?? "some kind of weather I can't quite classify";
             resolve(`Right now it's about ${Number.isFinite(temp) ? `${temp}°C` : 'a mild temperature'} with ${desc} where you are. `);
           } catch (err) {
             resolve("I tried to grab the forecast, but the weather service didn't come back in time. Try again in a bit?");
@@ -877,7 +315,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
       query.includes('who are you') ||
       query.includes('what are you')
     ) {
-      return "I'm Sonya — Brian's AI Assistant! I'm here to talk about his projects, tools, and skills, or just chat if you want a break. 😄";
+      return "I'm Brian's AI Assistant! I'm here to talk about his projects, tools, and skills, or just chat if you want a break. 😄";
     }
     if (query.includes('hi') || query.includes('hello')) return `Hey there! Good ${getGreetingByTime()}! How can I help you explore Brian's portfolio today? 😊`;
     if (query.includes('pogi') || query.includes('gwapo')) return "Sobra! Kitang-kita naman sa profile pic diba? 😎✨";
@@ -909,13 +347,6 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
     setShowNotification(false);
   };
 
-  const switchMode = (next) => {
-    if (next === mode) return;
-    window.speechSynthesis?.cancel?.();
-    stopListening();
-    setMode(next);
-  };
-
   const theme = darkMode
     ? {
         panel: 'bg-[#0a1620] border-white/10 text-slate-100',
@@ -926,8 +357,6 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
         notif: 'bg-gradient-to-br from-[#102232] to-[#0a1620] border-white/10 backdrop-blur-xl',
         glow: 'shadow-[0_40px_110px_-20px_rgba(14,165,233,0.35),0_0_0_1px_rgba(255,255,255,0.06)]',
         fabGlow: 'shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_20px_55px_-10px_rgba(14,165,233,0.5)]',
-        tabActive: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-blue-500/25',
-        tabInactive: 'text-slate-500 hover:text-slate-300',
         accentText: 'text-cyan-400',
         ring: 'ring-[#0a1620]',
       }
@@ -940,22 +369,9 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
         notif: 'bg-gradient-to-br from-white to-sky-50/70 border-slate-200 backdrop-blur-xl',
         glow: 'shadow-[0_40px_110px_-20px_rgba(14,165,233,0.22),0_0_0_1px_rgba(0,0,0,0.04)]',
         fabGlow: 'shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_20px_55px_-10px_rgba(14,165,233,0.35)]',
-        tabActive: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-blue-500/20',
-        tabInactive: 'text-slate-400 hover:text-slate-700',
         accentText: 'text-cyan-600',
         ring: 'ring-white',
       };
-
-  const voiceStatusLabel = {
-    idle: voiceSupported ? 'tap the mic to talk' : 'voice not supported here',
-    listening: 'listening...',
-    thinking: 'thinking...',
-    speaking: 'speaking...',
-  }[voiceState];
-
-  // Most recent bot reply, shown as a small caption under the wave while
-  // speaking (voice mode intentionally has no chat bubble history)
-  const lastBotReply = [...messages].reverse().find((m) => m.sender === 'bot')?.text;
 
   return (
     <div className="fixed inset-x-0 bottom-4 px-4 sm:px-0 sm:inset-x-auto sm:bottom-8 sm:right-8 z-[1000] flex flex-col items-center sm:items-end font-sans">
@@ -983,7 +399,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-mono text-cyan-500 tracking-wide mb-0.5 flex items-center gap-1.5">
-                <span className="font-semibold">sonya</span> <span className={darkMode ? 'text-slate-600' : 'text-slate-300'}>//</span> new_message
+                <span className="font-semibold">Brian's AI Assistant</span> <span className={darkMode ? 'text-slate-600' : 'text-slate-300'}>//</span> new_message
               </p>
               <p className={`text-base font-semibold leading-snug ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                 How's the work? Need help?
@@ -1013,10 +429,10 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                   </div>
                   <div className="min-w-0">
                     <p className="font-mono text-lg font-bold tracking-tight truncate bg-gradient-to-r from-cyan-400 via-blue-500 to-teal-300 bg-clip-text text-transparent">
-                      sonya
+                      Brian's AI Assistant
                     </p>
                     <p className={`text-[11px] font-mono truncate -mt-0.5 mb-0.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                      brian's ai assistant
+                      brian's portfolio helper
                     </p>
                     <p className={`text-xs font-mono flex items-center gap-1.5 ${status === 'online' ? 'text-cyan-500' : 'text-teal-500'}`}>
                       <Circle size={7} className={`${status === 'online' ? 'fill-cyan-400 text-cyan-400' : 'fill-teal-400 text-teal-400'} animate-pulse`} />
@@ -1032,205 +448,83 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                 </button>
               </div>
 
-              {/* Mode switcher: Chat vs Voice */}
-              <div className={`flex gap-1 px-4 pt-3 pb-1 border-b ${theme.header}`}>
-                <button
-                  onClick={() => switchMode('chat')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-mono font-medium transition-colors ${mode === 'chat' ? theme.tabActive : theme.tabInactive}`}
-                >
-                  <MessageSquare size={16} /> chat
-                </button>
-                <button
-                  onClick={() => switchMode('voice')}
-                  disabled={!voiceSupported}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-mono font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${mode === 'voice' ? theme.tabActive : theme.tabInactive}`}
-                >
-                  <AudioLines size={16} /> voice
-                </button>
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                    <span className={`text-xs font-mono mb-1.5 px-1 font-medium ${msg.sender === 'user' ? 'text-teal-500' : 'text-cyan-500'}`}>
+                      {msg.sender === 'user' ? 'you ❯' : "Brian's AI Assistant"}
+                    </span>
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`max-w-[88%] px-5 py-3.5 rounded-2xl text-base leading-relaxed border ${
+                        msg.sender === 'user'
+                          ? 'bg-teal-500/10 border-teal-500/30 text-teal-600 dark:text-teal-300 font-mono rounded-tr-md'
+                          : `${theme.bubbleBot} rounded-tl-md`
+                      }`}
+                    >
+                      {msg.text}
+                    </motion.div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="flex flex-col items-start">
+                    <span className="text-xs font-mono mb-1.5 px-1 font-medium text-cyan-500">Brian's AI Assistant</span>
+                    <div className={`px-5 py-3.5 rounded-2xl rounded-tl-md border flex items-center gap-1.5 ${theme.bubbleBot}`}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s] opacity-60" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s] opacity-60" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce opacity-60" />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {mode === 'chat' ? (
-                <>
-                  <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                    {messages.map((msg) => (
-                      <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                        <span className={`text-xs font-mono mb-1.5 px-1 font-medium ${msg.sender === 'user' ? 'text-teal-500' : 'text-cyan-500'}`}>
-                          {msg.sender === 'user' ? 'you ❯' : 'sonya'}
-                        </span>
-                        <motion.div
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`max-w-[88%] px-5 py-3.5 rounded-2xl text-base leading-relaxed border ${
-                            msg.sender === 'user'
-                              ? 'bg-teal-500/10 border-teal-500/30 text-teal-600 dark:text-teal-300 font-mono rounded-tr-md'
-                              : `${theme.bubbleBot} rounded-tl-md`
-                          }`}
-                        >
-                          {msg.text}
-                        </motion.div>
-                      </div>
-                    ))}
-                    {isTyping && (
-                      <div className="flex flex-col items-start">
-                        <span className="text-xs font-mono mb-1.5 px-1 font-medium text-cyan-500">sonya</span>
-                        <div className={`px-5 py-3.5 rounded-2xl rounded-tl-md border flex items-center gap-1.5 ${theme.bubbleBot}`}>
-                          <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s] opacity-60" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s] opacity-60" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce opacity-60" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <form onSubmit={handleSend} className={`p-4 border-t flex items-center gap-2 ${theme.header}`}>
-                    <button
-                      type="button"
-                      onClick={toggleDictation}
-                      disabled={!voiceSupported}
-                      title={voiceSupported ? 'Dictate your message' : 'Voice input not supported in this browser'}
-                      className={`p-3 rounded-xl transition-all disabled:opacity-30 ${voiceState === 'listening' ? 'bg-red-500/20 text-red-500' : 'hover:bg-slate-500/10'}`}
-                    >
-                      {voiceState === 'listening' ? <Mic size={20} className="animate-pulse" /> : <MicOff size={20} />}
-                    </button>
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      placeholder="ask something..."
-                      className={`flex-1 px-3 py-3.5 rounded-xl border outline-none text-base font-mono transition-colors ${theme.input}`}
-                    />
-                    <button
-                      type="submit"
-                      disabled={!input.trim()}
-                      className="p-3 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 text-[#0a1620] disabled:opacity-30 hover:scale-105 active:scale-95 transition-transform"
-                    >
-                      <ArrowUp size={20} strokeWidth={2.5} />
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <div className="flex-1 min-h-0 flex flex-col items-center justify-between p-3 sm:p-6 overflow-y-auto">
-                  {!voiceSupported ? (
-                    <div className="flex-1 flex items-center justify-center text-center px-6">
-                      <p className={`text-sm font-mono ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                        Your browser doesn't support speech recognition. Try Chrome or Edge, or use Chat mode instead.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Sound wave — no chat bubbles in voice mode, just the wave + a caption */}
-                      <div className="flex-1 w-full flex flex-col items-center justify-center gap-3 sm:gap-6">
-                        <VoiceWave
-                          active={voiceState === 'listening' || voiceState === 'speaking'}
-                          levels={waveLevels}
-                          state={voiceState}
-                          darkMode={darkMode}
-                        />
-                        {voiceState === 'speaking' && lastBotReply && (
-                          <p className={`text-center text-sm font-mono px-4 max-w-[92%] leading-relaxed ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                            {lastBotReply}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Mic control — lifted higher above the bottom edge */}
-                      <div className="flex flex-col items-center gap-2 sm:gap-5 pt-2 sm:pt-6 pb-2 sm:pb-12 shrink-0">
-                        <p className={`text-sm font-mono tracking-wide text-center px-4 ${micError ? 'text-red-500' : darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {micError || (voiceState === 'listening' && voiceTranscript ? `"${voiceTranscript}"` : voiceStatusLabel)}
-                        </p>
-
-                        <motion.button
-                          onClick={toggleVoiceSession}
-                          disabled={voiceState === 'thinking'}
-                          whileTap={{ scale: 0.94 }}
-                          className={`relative w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center border-2 transition-colors disabled:opacity-60 shrink-0 ${
-                            voiceState === 'listening'
-                              ? 'bg-red-500/10 border-red-400 text-red-500'
-                              : voiceState === 'speaking'
-                              ? 'bg-indigo-500/10 border-indigo-400 text-indigo-500'
-                              : `bg-gradient-to-br from-cyan-400/20 to-blue-400/20 border-cyan-400/50 ${darkMode ? 'text-cyan-300' : 'text-cyan-600'}`
-                          }`}
-                        >
-                          {voiceState === 'listening' && (
-                            <motion.span
-                              className="absolute inset-0 rounded-full border-2 border-red-400"
-                              animate={{ scale: [1, 1.35, 1], opacity: [0.6, 0, 0.6] }}
-                              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                            />
-                          )}
-                          {voiceState === 'speaking' && (
-                            <motion.span
-                              className="absolute inset-0 rounded-full border-2 border-indigo-400"
-                              animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0, 0.6] }}
-                              transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-                            />
-                          )}
-                          {voiceState === 'thinking' ? (
-                            <Loader2 size={22} className="animate-spin sm:w-[30px] sm:h-[30px]" />
-                          ) : (
-                            <Mic size={22} strokeWidth={2} className="sm:w-[30px] sm:h-[30px]" />
-                          )}
-                        </motion.button>
-
-                        <button
-                          onClick={() => setAutoListen((v) => !v)}
-                          className={`text-xs font-mono px-3 py-1.5 rounded-lg transition-colors ${
-                            autoListen
-                              ? 'text-cyan-500'
-                              : darkMode ? 'text-slate-600 hover:text-slate-400' : 'text-slate-400 hover:text-slate-600'
-                          }`}
-                        >
-                          {autoListen ? '● keep listening after each reply' : '○ tap to talk each time'}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
+              <form onSubmit={handleSend} className={`p-4 border-t flex items-center gap-2 ${theme.header}`}>
+                <button
+                  type="button"
+                  onClick={toggleDictation}
+                  disabled={!voiceSupported}
+                  title={voiceSupported ? 'Dictate your message' : 'Voice input not supported in this browser'}
+                  className={`p-3 rounded-xl transition-all disabled:opacity-30 ${isDictating ? 'bg-red-500/20 text-red-500' : 'hover:bg-slate-500/10'}`}
+                >
+                  {isDictating ? <Mic size={20} className="animate-pulse" /> : <MicOff size={20} />}
+                </button>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={micError || "ask something..."}
+                  className={`flex-1 px-3 py-3.5 rounded-xl border outline-none text-base font-mono transition-colors ${theme.input}`}
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim()}
+                  className="p-3 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 text-[#0a1620] disabled:opacity-30 hover:scale-105 active:scale-95 transition-transform"
+                >
+                  <ArrowUp size={20} strokeWidth={2.5} />
+                </button>
+              </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
       {!isOpen && (
-        <div className="hidden sm:flex flex-col items-end gap-2">
-          <motion.button
-            onClick={enableClapToTalk}
-            whileTap={{ scale: 0.95 }}
-            title={
-              clapStatus === 'listening'
-                ? 'Clap to talk is on — clap once to open voice mode'
-                : clapStatus === 'denied'
-                ? "Mic access was blocked — click to try enabling clap to talk again"
-                : 'Turn on clap-activated voice mode'
-            }
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono border transition-colors ${
-              clapStatus === 'listening'
-                ? 'bg-cyan-500/10 border-cyan-400/50 text-cyan-500'
-                : darkMode
-                ? 'bg-[#0a1620] border-white/10 text-slate-400 hover:text-slate-200'
-                : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            <span>👏</span>
-            {clapStatus === 'listening' ? 'clap to talk: on' : clapStatus === 'denied' ? 'mic blocked' : 'enable clap to talk'}
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.92 }}
-            onClick={toggleChat}
-            className={`relative p-6 rounded-3xl border overflow-hidden ${theme.fab} ${theme.fabGlow}`}
-          >
-            <motion.span
-              className="absolute inset-0 rounded-3xl pointer-events-none"
-              style={{ background: 'radial-gradient(circle at 50% 40%, rgba(34,211,238,0.35), transparent 70%)' }}
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <Terminal size={34} className="text-cyan-400 relative" strokeWidth={2} />
-          </motion.button>
-        </div>
+        <motion.button
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.92 }}
+          onClick={toggleChat}
+          className={`relative p-6 rounded-3xl border overflow-hidden ${theme.fab} ${theme.fabGlow}`}
+        >
+          <motion.span
+            className="absolute inset-0 rounded-3xl pointer-events-none"
+            style={{ background: 'radial-gradient(circle at 50% 40%, rgba(34,211,238,0.35), transparent 70%)' }}
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <Terminal size={34} className="text-cyan-400 relative" strokeWidth={2} />
+        </motion.button>
       )}
     </div>
   );
