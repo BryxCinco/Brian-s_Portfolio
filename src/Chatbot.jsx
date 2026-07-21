@@ -41,7 +41,7 @@ const VoiceWave = ({ active, levels, state, darkMode }) => {
         };
 
   return (
-    <div className="relative flex items-center justify-center flex-1 w-full min-h-[260px] max-h-[460px]">
+    <div className="relative flex items-center justify-center flex-1 w-full min-h-[140px] sm:min-h-[260px] max-h-[460px]">
       {/* Big breathing aura — fills most of the box, sways with volume */}
       <motion.div
         className="absolute rounded-full blur-3xl pointer-events-none"
@@ -185,6 +185,9 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [voiceSupported, setVoiceSupported] = useState(true);
   const [autoListen, setAutoListen] = useState(true);
+  // Surfaces *why* voice mode won't start (mic blocked, insecure context,
+  // etc.) instead of silently reverting to idle with no explanation.
+  const [micError, setMicError] = useState('');
 
   // Live sound-wave bar heights (0..1) for the voice mode visualizer
   const [waveLevels, setWaveLevels] = useState(() => Array(WAVE_BARS).fill(0.1));
@@ -253,6 +256,14 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
       setVoiceSupported(false);
       return;
     }
+    // getUserMedia/SpeechRecognition are only available in a "secure
+    // context" (HTTPS, or localhost). If this ever gets embedded/proxied
+    // over plain HTTP, voice mode will silently refuse to start — this
+    // makes that failure visible instead of a mystery.
+    if (typeof window.isSecureContext === 'boolean' && !window.isSecureContext) {
+      setVoiceSupported(false);
+      return;
+    }
     recognitionRef.current = new SpeechRecognition();
     recognitionRef.current.continuous = false;
     recognitionRef.current.interimResults = false;
@@ -273,8 +284,15 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
       setVoiceState((prev) => (prev === 'listening' ? 'idle' : prev));
     };
 
-    recognitionRef.current.onerror = () => {
+    recognitionRef.current.onerror = (event) => {
       setVoiceState('idle');
+      if (event?.error === 'not-allowed' || event?.error === 'service-not-allowed') {
+        setMicError('Mic access is blocked. Allow microphone permission for this site in your browser settings, then try again.');
+      } else if (event?.error === 'network') {
+        setMicError('Speech recognition needs an internet connection. Check your connection and try again.');
+      } else if (event?.error && event.error !== 'no-speech' && event.error !== 'aborted') {
+        setMicError('Voice input hit a snag (' + event.error + '). Try again, or use Chat mode.');
+      }
     };
 
     return () => {
@@ -486,12 +504,18 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
 
   const startListening = () => {
     if (!recognitionRef.current) return;
+    setMicError('');
     try {
       setVoiceTranscript('');
       setVoiceState('listening');
       recognitionRef.current.start();
     } catch (err) {
-      // already started, ignore
+      // "already started" is harmless and expected if a start slips in
+      // while one is in flight; anything else means it genuinely failed.
+      if (err?.name !== 'InvalidStateError') {
+        setVoiceState('idle');
+        setMicError('Could not start the mic. Try again.');
+      }
     }
   };
 
@@ -977,7 +1001,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 40, scale: 0.95 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className={`mb-4 w-full sm:w-[460px] md:w-[34vw] lg:w-[28vw] sm:min-w-[380px] max-w-[520px] h-[80vh] sm:h-[82vh] md:h-[74vh] min-h-[480px] sm:min-h-[600px] rounded-[1.75rem] border overflow-hidden flex flex-col relative ${theme.panel} ${theme.glow}`}
+              className={`mb-4 w-full sm:w-[460px] md:w-[34vw] lg:w-[28vw] sm:min-w-[380px] max-w-[520px] h-[85dvh] sm:h-[82vh] md:h-[74vh] min-h-[380px] sm:min-h-[600px] rounded-[1.75rem] border overflow-hidden flex flex-col relative ${theme.panel} ${theme.glow}`}
             >
               <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-cyan-400 via-blue-500 to-teal-300 z-10" />
 
@@ -1086,7 +1110,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                   </form>
                 </>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-between p-6">
+                <div className="flex-1 min-h-0 flex flex-col items-center justify-between p-3 sm:p-6 overflow-y-auto">
                   {!voiceSupported ? (
                     <div className="flex-1 flex items-center justify-center text-center px-6">
                       <p className={`text-sm font-mono ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -1096,7 +1120,7 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                   ) : (
                     <>
                       {/* Sound wave — no chat bubbles in voice mode, just the wave + a caption */}
-                      <div className="flex-1 w-full flex flex-col items-center justify-center gap-6">
+                      <div className="flex-1 w-full flex flex-col items-center justify-center gap-3 sm:gap-6">
                         <VoiceWave
                           active={voiceState === 'listening' || voiceState === 'speaking'}
                           levels={waveLevels}
@@ -1111,16 +1135,16 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                       </div>
 
                       {/* Mic control — lifted higher above the bottom edge */}
-                      <div className="flex flex-col items-center gap-5 pt-6 pb-12">
-                        <p className={`text-sm font-mono tracking-wide ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {voiceState === 'listening' && voiceTranscript ? `"${voiceTranscript}"` : voiceStatusLabel}
+                      <div className="flex flex-col items-center gap-2 sm:gap-5 pt-2 sm:pt-6 pb-2 sm:pb-12 shrink-0">
+                        <p className={`text-sm font-mono tracking-wide text-center px-4 ${micError ? 'text-red-500' : darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {micError || (voiceState === 'listening' && voiceTranscript ? `"${voiceTranscript}"` : voiceStatusLabel)}
                         </p>
 
                         <motion.button
                           onClick={toggleVoiceSession}
                           disabled={voiceState === 'thinking'}
                           whileTap={{ scale: 0.94 }}
-                          className={`relative w-24 h-24 rounded-full flex items-center justify-center border-2 transition-colors disabled:opacity-60 ${
+                          className={`relative w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center border-2 transition-colors disabled:opacity-60 shrink-0 ${
                             voiceState === 'listening'
                               ? 'bg-red-500/10 border-red-400 text-red-500'
                               : voiceState === 'speaking'
@@ -1143,9 +1167,9 @@ const Chatbot = forwardRef(({ darkMode }, ref) => {
                             />
                           )}
                           {voiceState === 'thinking' ? (
-                            <Loader2 size={30} className="animate-spin" />
+                            <Loader2 size={22} className="animate-spin sm:w-[30px] sm:h-[30px]" />
                           ) : (
-                            <Mic size={30} strokeWidth={2} />
+                            <Mic size={22} strokeWidth={2} className="sm:w-[30px] sm:h-[30px]" />
                           )}
                         </motion.button>
 
